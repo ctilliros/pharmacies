@@ -1,0 +1,105 @@
+<html>
+<head>
+  <title>Demo Form</title>
+  <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <style type="text/css">
+    /* Remove arrows from input number text box */
+    /* Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    /* Firefox */
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    /* ============================================= */    
+  </style>  
+  <script type="text/javascript">
+    $(document).ready(function(){
+      $('form').on('submit', function(event){
+        $.ajax({
+          data:{            
+            identification_method:$("#identification_method").val(),
+            identification:$("#identification").val(),            
+            password:$("#password").val()
+          },
+          type: 'POST',
+          url:'/login_post',          
+          })
+        .done(function(data){                
+            window.setTimeout(function(){        
+        window.location.href = "/login_post";
+
+      }, 1000);          
+        })
+        ;
+        event.preventDefault();
+          
+        });
+
+      });
+
+
+function clearfield(){
+  document.getElementById('identification').value = "";
+}
+
+function isNumber(evt) {
+        var x  = $("#identification_method").val();                
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if (x==='Τηλέφωνο Επικοινωνίας'){
+          if ( (charCode > 31 && charCode < 48) || charCode > 57) {
+              alert("Το πεδίο αυτό δέχεται μόνο αριθμούς");
+              return false;
+        }        
+      }
+        return true;
+    }
+
+  </script>
+</head>
+<body>
+  <div class="container"><br>
+    <center>
+      <h2>Καλωσορίσατε   </h2>
+    </center>
+  </div>
+  <div class=container"><br>
+    <div class="row align-items-center justify-content-center">
+      <div class="col-md-6">
+        <form  action="" method="post" role="form" id="fm">                    
+          <div class="form-group">                   
+            <label for="password">Τρόπος σύνδεσης</label>
+            <select id="identification_method" name="identification_method" class="form-control" onchange="clearfield()" >
+              <!-- <option  name="city" value="0" selected>Επιλέξτε τρόπο σύνδεσης</option> -->
+              <option id="identification_method" name="identification_method" value="Ταυτότητα" selected>Ταυτότητα</option>
+              <option id="identification_method" name="identification_method" value="Διαβατήριο">Διαβατήριο</option>
+              <option id="identification_method" name="identification_method" value="Τηλέφωνο Επικοινωνίας">Τηλέφωνο Επικοινωνίας</option>      
+              <option id="identification_method" name="identification_method" value="Ηλεκτρονικό Ταχυδρομείο">Ηλεκτρονικό Ταχυδρομείο</option>
+
+            </select><br>
+            <input type="text" class="form-control" id="identification" name="identification" onkeypress="return isNumber(event)" placeholder="Προσθέστε τα στοιχεία της πιο πάνω επιλογής σύνδεσης">
+            <br>
+            <label for="password">Κωδικός Χρήστη:</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Εισαγωγή κωδικού">                  
+          </div>
+          <br>                             
+          <center>
+            <button type="submit" id="submit" class="btn btn-success">Σύνδεση</button>
+          </center>
+        </form>        
+        <p> Δεν έχεις λογαριασμό; <a href="signup">Δημιούργησε τώρα! </p>        
+        </div>
+        <br>
+      </div>
+    </div>
+  </body>
+  </html>

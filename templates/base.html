@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Flask Auth Example</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" />
+
+	<style type="text/css">
+		/* Chrome, Safari, Edge, Opera */
+		input::-webkit-outer-spin-button,
+		input::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
+
+		/* Firefox */
+		input[type=number] {
+			-moz-appearance: textfield;
+		}
+	
+	</style>
+</head>
+
+<body>
+	<section class="hero is-primary is-fullheight">
+		<div class="hero-head"><nav class="navbar">
+			<div class="container">
+				<p>asflkjsadfhsdafhsadjkfas</p>
+			</div>
+		</nav>
+	</div>
+
+
+	<div class="hero-body">
+		<div class="container has-text-centered">
+			<div class="column is-7 is-offset-3">
+				<form>
+					{% block content %}
+					<button class="button is-block is-info is-large is-fullwidth">
+						<a href="{{ url_for('login') }}">Σύνδεση</button></a>
+						<br>
+						<button class="button is-block is-info is-large is-fullwidth">
+							<a href="{{ url_for('signup') }}">Εγγραφή</button></a>
+							{% endblock %}
+						</form>
+					</div>	
+				</div>
+			</div>
+
+		</section>
+
+
+	</body>
+
+	</html>

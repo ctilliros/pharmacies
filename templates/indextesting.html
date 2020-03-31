@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+	<title></title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css" />
+	<style type="text/css">
+		/* Chrome, Safari, Edge, Opera */
+		input::-webkit-outer-spin-button,
+		input::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
+
+		/* Firefox */
+		input[type=number] {
+			-moz-appearance: textfield;
+		}
+	</style>
+</head>
+<body>
+	<section class="hero is-primary is-fullheight">
+
+		<div class="hero-head">
+			<nav class="navbar">
+				<div class="container">
+
+					<div id="navbarMenuHeroA" class="navbar-menu">
+						<div class="navbar-end">
+
+						</div>
+					</div>
+				</div>
+			</nav>
+		</div>
+
+		<div class="hero-body">
+			<div class="container has-text-centered">
+				<div class="column is-7 is-offset-3">
+					{% block content %}					
+					<button class="button is-block is-info is-large is-fullwidth">
+						<a href="{{ url_for('') }}">Σύνδεση</button></a>
+						<br>
+						<button class="button is-block is-info is-large is-fullwidth">
+							<a href="{{ url_for('signup') }}">Εγγραφή</button></a>
+
+							{% endblock %}
+						</div>
+					</div>
+
+				</div>
+			</section>
+
+
+		</body>
+		</html>

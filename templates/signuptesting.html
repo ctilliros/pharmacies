@@ -1,0 +1,103 @@
+{% extends 'indextesting.html'%}
+
+{% block content %}
+<div class="box">
+	<form method="POST" action="/signup">
+		
+		<div class="field">
+			<div class="control" >
+				<input class="input is-medium"  type="text" name="name" placeholder="Username: aandreou*" autofocus="" >
+			</div>
+		</div>
+
+		<div class="field">
+			<div class="control">
+				<input class="input is-medium" type="password" name="password" placeholder="Κωδικός Πρόσβασης *">
+			</div>
+		</div>
+		
+		<div class="field">
+			<div class="control">
+				<input class="input is-medium" type="text" name="fname" placeholder="Όνομα:Ανδρέας *" >
+			</div>
+		</div>
+
+<!-- 			<span class="icon is-small is-left">
+				<i class="fas fa-user"></i>
+			</span>
+
+		-->
+		<div class="field">
+			<div class="control">
+				<input class="input is-medium" type="text" name="sname" placeholder="Επίθετο:Ανδρέου *" >
+			</div>
+		</div>
+		
+
+		<div class="field">
+			<div class="control">
+				<select class="input is-medium">
+					<option value="0" selected>Αριθμός Ταυτότητας</option>
+					<option value="1">Αριθμός Διαβατηρίου</option>					
+				</select>
+			</div>
+		</div>
+
+		<div class="field">
+			
+			<div class="control is-exapanded">
+				<input class="input is-medium" type="text" name="identification_number" placeholder="Αρ.Ταυτότητας: 123456 *" >
+
+			</div>
+		</div>
+
+
+
+
+
+
+		<div class="field">
+			<div class="control">
+				<input class="input is-medium" type="email" name="name" placeholder="Email: test@test.com *" >
+			</div>
+		</div>
+		<div class="field">
+			<div class="control">
+				<input class="input is-medium" type="number" name="name" placeholder="Κινητό: 99123456 *" >
+			</div>
+		</div>
+
+
+
+		<div class="field">
+			<div class="control">
+				<input class="input is-medium" type="text" name="name" placeholder="Διεύθυνση: Αρχιεπισκόπου Μακαρίου 1 *" >
+			</div>
+		</div>
+		
+		<div class="field">
+			<div class="control">
+				<input class="input is-medium" type="text" name="name" placeholder="Τ.Κ: 1000 *" >
+			</div>
+		</div>
+
+
+
+
+		<button class="button is-block is-info is-large is-fullwidth">Εγγραφή</button>
+
+
+		<div class="field">
+			<div class="control">
+				<label class="checkbox">
+					<input type="checkbox">
+
+					I agree to the <a href="#">terms and conditions</a>
+				</label>
+			</div>
+		</div>
+
+
+	</form>
+</div>
+{% endblock %}
