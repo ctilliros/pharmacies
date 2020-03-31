@@ -5,7 +5,7 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
+{% block style_scipt%}
   <style type="text/css">
     /* Remove arrows from input number text box */
     /* Chrome, Safari, Edge, Opera */
@@ -22,7 +22,15 @@
     /* ============================================= */    
   </style>  
   <script type="text/javascript">
-    $(document).ready(function(){
+    $(document).ready(function(){      
+      $(document).bind("contextmenu",function(e) {
+       e.preventDefault();
+     });
+      $(document).keydown(function(e){
+        if(e.which === 123){
+         return false;
+       }
+     });
       $('form').on('submit', function(event){
         $.ajax({
           data:{            
@@ -31,42 +39,83 @@
             password:$("#password").val()
           },
           type: 'POST',
-          url:'/login_post',          
-          })
+          url:'/login',          
+        })
         .done(function(data){                
-            window.setTimeout(function(){        
-        window.location.href = "/login_post";
+          window.setTimeout(function(){
+            var account  = $("#identification").val();            
+            var method = $("#identification_method").val();
+            if (method ==='Ταυτότητα'){
+                method == 'id';
+            }
+            if (method ==='Διαβατήριο'){
+                method== 'passport';
+            }
+            if (method ==='Τηλέφωνο Επικοινωνίας'){
+                method == 'contact';
+            }
+            if (method ==='Ηλεκτρονικό Ταχυδρομείο'){
+                method=='email';
+            }
 
-      }, 1000);          
+            alert("Επιτυχής σύνδεση");      
+            window.location.href = "/profile/"+method+"/"+account;
+          }, 1000);          
+        }).
+        fail(function(){
+          clearfield();
+          alert("Παρακαλώ όπως προσθέσετε τα σωστά στοιχεία. Τα στοιχεία σύνδεσης ή ο κωδικός πρόσβασης είναι λανθασμένος.");
         })
         ;
         event.preventDefault();
-          
-        });
-
       });
+    });
 
 
-function clearfield(){
-  document.getElementById('identification').value = "";
-}
-
-function isNumber(evt) {
-        var x  = $("#identification_method").val();                
-        evt = (evt) ? evt : window.event;
-        var charCode = (evt.which) ? evt.which : evt.keyCode;
-        if (x==='Τηλέφωνο Επικοινωνίας'){
-          if ( (charCode > 31 && charCode < 48) || charCode > 57) {
-              alert("Το πεδίο αυτό δέχεται μόνο αριθμούς");
-              return false;
-        }        
-      }
-        return true;
+    function clearfield(){
+      document.getElementById('identification').focus();
+      document.getElementById('identification').value = "";
+      document.getElementById('password').value = "";     
     }
 
+    function isNumber(evt) {
+      var x  = $("#identification_method").val();                
+      evt = (evt) ? evt : window.event;
+      var charCode = (evt.which) ? evt.which : evt.keyCode;
+      if (x==='Τηλέφωνο Επικοινωνίας'){
+        if ( (charCode > 31 && charCode < 48) || charCode > 57) {
+          alert("Το πεδίο αυτό δέχεται μόνο αριθμούς");
+          return false;
+        }        
+      }
+      return true;
+    }
   </script>
+
+{% endblock %}
+
+
+
+
+
 </head>
 <body>
+  <!-- <nav class="navbar navbar-expand-lg navbar-light bg-light"> -->
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <ul class="navbar-nav ml-auto">
+  {% block profile%}
+    <li class="nav-item">
+      <a class="nav-link" href="/">Σύνδεση</a>      
+    </li>    
+    <li class="nav-item">
+    <a class="nav-link" href="signup">Εγγραφή</a>
+  </li>
+  {%endblock%}
+  </ul>
+</nav>
+
+{% block content%}
   <div class="container"><br>
     <center>
       <h2>Καλωσορίσατε   </h2>
@@ -79,17 +128,15 @@ function isNumber(evt) {
           <div class="form-group">                   
             <label for="password">Τρόπος σύνδεσης</label>
             <select id="identification_method" name="identification_method" class="form-control" onchange="clearfield()" >
-              <!-- <option  name="city" value="0" selected>Επιλέξτε τρόπο σύνδεσης</option> -->
               <option id="identification_method" name="identification_method" value="Ταυτότητα" selected>Ταυτότητα</option>
               <option id="identification_method" name="identification_method" value="Διαβατήριο">Διαβατήριο</option>
               <option id="identification_method" name="identification_method" value="Τηλέφωνο Επικοινωνίας">Τηλέφωνο Επικοινωνίας</option>      
               <option id="identification_method" name="identification_method" value="Ηλεκτρονικό Ταχυδρομείο">Ηλεκτρονικό Ταχυδρομείο</option>
-
             </select><br>
             <input type="text" class="form-control" id="identification" name="identification" onkeypress="return isNumber(event)" placeholder="Προσθέστε τα στοιχεία της πιο πάνω επιλογής σύνδεσης">
             <br>
             <label for="password">Κωδικός Χρήστη:</label>
-            <input type="password" class="form-control" id="password" name="password" placeholder="Εισαγωγή κωδικού">                  
+            <input type="password" class="form-control" id="password" name="password" placeholder="Εισαγωγή κωδικού">              
           </div>
           <br>                             
           <center>
@@ -101,5 +148,6 @@ function isNumber(evt) {
         <br>
       </div>
     </div>
+{% endblock%}
   </body>
   </html>

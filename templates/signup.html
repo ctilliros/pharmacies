@@ -1,10 +1,5 @@
-<html>
-<head>
-  <title>Demo Form</title>
-  <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+{%extends 'index1.html' %}
+{% block style_scipt%}
 
   <style type="text/css">
     /* Remove arrows from input number text box */
@@ -89,7 +84,7 @@
             window.setTimeout(function(){
 
         // Move to a new location or you can do something else
-        window.location.href = "/signup_post";
+        window.location.href = "/";
 
       }, 1000);
           }
@@ -118,13 +113,11 @@ function isNumber(evt) {
         }        
         return true;
     }
-
-
-
   </script>
+{%endblock%}
 
-</head>
-<body>
+  {% block content%}
+
   <div class="container"><br>
     <center>
       <h2>Συμπλήρωση στοιχείων για εγγραφή στο σύστημα    </h2>
@@ -157,7 +150,7 @@ function isNumber(evt) {
             <br>
             <div class="form-row">
               <div class="form-group col-md-6">
-                <label for="inputState">Πόλη</label>
+                <label for="city">Πόλη</label>
                 <select id="city" name="city" class="form-control">
                   <option selected name="city" id="city" value="0">Επιλογή Πόλης</option>
                   <option  name="city" id="city" value="Λευκωσία">Λευκωσία</option>
@@ -196,5 +189,4 @@ function isNumber(evt) {
         <br>
       </div>
     </div>
-  </body>
-  </html>
+    {%endblock%}

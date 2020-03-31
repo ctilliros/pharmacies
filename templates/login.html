@@ -1,9 +1,17 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<title></title>
-</head>
-<body>
-<p>Geiaaaaa</p>
-</body>
-</html>
+{% extends 'index1.html' %}
+{% block profile%}
+<li class="nav-item">
+    <a class="nav-link" href="signup">Προφίλ</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="signup">Αποσύνδεση</a>
+  </li>
+{%endblock%}
+{% block content%}
+<p>asdfsadfsad</p>
+
+<br><br><br><br><br><br><br><br><br>
+
+{% include 'map.html' %}
+{%endblock%}
+ 

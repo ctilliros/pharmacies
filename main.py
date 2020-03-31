@@ -34,10 +34,11 @@ class Database(db.Model):
     email = db.Column(db.String())
     contact_number = db.Column(db.Integer())
     address = db.Column(db.String())
+    city = db.Column(db.String())
     postal_code = db.Column(db.String())
     password = db.Column(db.String(255))
 
-    def __init__(self, name, surname, identification_method, identification_number, email, contact_number, address, postal_code, password):
+    def __init__(self, name, surname, identification_method,city, identification_number, email, contact_number, address, postal_code, password):
         self.name = name
         self.surname = surname
         self.identification_method = identification_method
@@ -45,6 +46,7 @@ class Database(db.Model):
         self.email = email
         self.contact_number = contact_number
         self.address = address
+        self.city = city
         self.postal_code = postal_code
         # self.password = bcrypt.generate_password_hash(password).decode('UTF-8')
         self.password = password
@@ -77,26 +79,17 @@ class LoginForm(Form):
     ])
     submit = SubmitField('Submit')
 
-def get_time():
-    time = strftime("%Y-%m-%dT%H:%M")
-    return time
-
-def write_to_disk(name, surname):
-    data = open('file.log', 'a')
-    timestamp = get_time()
-    data.write('DateStamp={}, Name={}, Surname={}, Email={} \n'.format(timestamp, name, surname))
-    data.close()
-
 @app.route("/signup", methods=['POST','GET'])
-def signup():
+def signup():    
     return render_template('signup.html')
 
-@app.route("/login", methods=["POST", "GET"])
-def login():
-    return render_template('login.html')
-@app.route("/login_post", methods=['POST','GET'])
-def login_post(): 
-    form = LoginForm(request.form)   
+# @app.route("/login_post", methods=["POST", "GET"])
+# def login_post():
+#     print("2")
+#     return render_template('login.html')
+
+@app.route("/login", methods=['POST','GET'])
+def login(): 
     if request.method == 'POST':
         identification_method = request.form['identification_method']
         if (identification_method == 'Ταυτότητα'):             
@@ -109,45 +102,145 @@ def login_post():
             identification_method = 2
         elif identification_method == 'Τηλέφωνο Επικοινωνίας':
             contact_number=request.form['identification']
-            identification = contact_number            
+            identification = contact_number                
         elif identification_method == 'Ηλεκτρονικό Ταχυδρομείο':
             email=request.form['identification']
             identification = email
-        password = request.form['password']                
+        password = request.form['password']   
+        
+
         if (identification != '') or (password != ""):
             if (identification_method == 1) or (identification_method == 2) :
                 records = Database.query.filter(Database.identification_method == identification_method,
                 Database.identification_number == identification).first()            
             if (identification_method == 'Τηλέφωνο Επικοινωνίας'):
-                records = Database.query.filter(Database.contact_number == identification_method,
-                Database.identification_number == identification).first()
+                records = Database.query.filter(Database.contact_number == identification).first()
             if (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
-                records = Database.query.filter(Database.identification_method == identification_method,
-                Database.identification_number == identification).first()
-            print("AAAAA")
-            print(records)
-            # found_user = User.query.filter_by(username = form.data['username']).first()
-            if records:
-                print(records.password)
-                print(generate_password_hash(password))
+                records = Database.query.filter(Database.identification_number == identification).first()
+            
+            if records:                
                 authenticated_user = check_password_hash(records.password,password)
-                if authenticated_user:
-                    print("Alasfslkfsljkfslkjfsjkld")
-            # if records:
-                # data = Database(name=name, surname=surname, identification_method=identification_method, identification_number=identification_number,
-                 # email= email, contact_number=contact_number, address= address, postal_code= postal_code, password=password)
-                # db.session.add(data)
-                # db.session.commit()
-            return jsonify({'password': password})
-        else:
-            return jsonify({'error': 'Υπάρχουν κενά πεδία. Παρακαλώ όπως συμπληρωθούν!'})        
+                if authenticated_user:  
+                    create_map(identification_method,identification)
+                    return redirect(url_for('profile',identification_method = identification_method, identification=identification, scheme = 'https'))
+                else:                    
+                    return redirect('index1.html')                    
+            else:                            
+                return redirect('index1.html')        
+    # return redirect(url_for('profile',identification=identification, scheme = 'https'))
+
+def method(identification_method):
+    if (identification_method == 'Ταυτότητα'):
+        method = 'id'
+    elif (identification_method =='Διαβατήριο'):
+        method = 'passport'
+    elif (identification_method =='Τηλέφωνο Επικοινωνίας'):
+        method = 'contact'
+    elif (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
+        method ='email' 
+    return method
+
+
+def create_map(identification_method,identification):
+    import overpy
+    file_farmakia = 'farmakia.json'
+    import os 
+    import json
+    from os import path
+    if path.exists(file_farmakia):
+        pass
+    else:        
+        api = overpy.Overpass()
+        r = api.query("""
+        area["ISO3166-1"="CY"][admin_level=2];
+        (node["amenity"="pharmacy"](area);
+         way["amenity"="pharmacy"](area);
+         rel["amenity"="pharmacy"](area);
+        );
+        out center;
+        """)
+        x = []
+        x += [node.id for node in r.nodes]
+        
+        coords  = []
+        coords += [(float(node.lon), float(node.lat)) 
+                   for node in r.nodes]
+        coords += [(float(way.center_lon), float(way.center_lat)) 
+                   for way in r.ways]
+        coords += [(float(rel.center_lon), float(rel.center_lat)) 
+                   for rel in r.relations]
+        
+        with open(file_farmakia,'w') as f:
+            json.dump(coords, f, indent=4 )
+    import folium
+    if (identification_method == 'Ταυτότητα'):             
+        identification_method = 1
+    elif (identification_method == 'Διαβατήριο'):
+        identification_method = 2
+
+    if (identification_method == 1) or (identification_method == 2) :
+        records = Database.query.filter(Database.identification_method == identification_method,
+            Database.identification_number == identification).first()            
+    elif (identification_method == 'Τηλέφωνο Επικοινωνίας'):
+        records = Database.query.filter(Database.contact_number == identification).first()
+    elif (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
+        records = Database.query.filter(Database.identification_number == identification).first()
+
+    city = records.city
+    if city == 'Λευκωσία':
+        lat =35.146599
+        lon =33.340160
+    elif city == 'Λάρνακα':
+        lat =34.923096
+        lon =33.634045
+    elif city == 'Λεμεσός':
+        lat =34.707130
+        lon =33.022617
+    elif city == 'Πάφος':
+        lat =34.772015
+        lon =32.429737
+    elif city == 'Αμμόχωστος':
+        lat =35.039440
+        lon = 33.981689
+
+    m = folium.Map(location=[lat, lon], zoom_start=12, zoom_control=True, tiles='cartodbpositron',
+                   # tiles='https://api.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiY3RpbGxpcm9zIiwiYSI6ImNrN2x2N2kxYjBibjMzZXBpZWM4dzA0aHgifQ.xLqa4xq-nIfPAlyYk0UD9A',
+                   # attr="bottomright",
+                   # min_zoom=13,
+                   # max_lat=35.33393, min_lat=35.01393, max_lon=33.524726, min_lon=33.204726, max_bounds=True,
+                   control_scale=True)    
+    from folium.plugins import LocateControl, Fullscreen
+    Fullscreen(
+            title='Expand me',
+            title_cancel='Exit fullscreen',
+            force_separate_button=True
+        ).add_to(m)
+    from folium import plugins
+
+    plugins.LocateControl().add_to(m)
+
+    with open(file_farmakia, 'r') as f:
+        data = json.load(f)
+    
+    for i in data:
+        lat = i[0]
+        lon = i[1]
+        folium.Marker([lon,lat]).add_to(m)
+
+    
+    m.save('templates/map.html')
+    return identification
+    
+    
+
+
+@app.route('/profile/<identification_method>/<identification>', methods=['POST','GET'])
+def profile(identification_method,identification):           
     return render_template('login.html')
-    # return jsonify({'error': 'fasdfasdfsaf'})
 
-
-
+    
 @app.route("/signup_post", methods=['POST','GET'])
-def signup_post():    
+def signup_post():            
     if request.method == 'POST':
         name = request.form['name']
         surname = request.form['surname']
@@ -158,7 +251,7 @@ def signup_post():
         address = request.form['address']
         city = request.form['city']
         postal_code = request.form['postal_code']        
-        password = request.form['password']                
+        password = request.form['password']                        
         if (name!='' and surname!='' and identification_method!='' and identification_number!='' 
             and contact_number!='' and address!='' and city!='' and postal_code!='' and password!='' ):            
             records = Database.query.filter(or_(Database.identification_number == identification_number,
@@ -166,41 +259,20 @@ def signup_post():
 
             if records == None:
                 data = Database(name=name, surname=surname, identification_method=identification_method, identification_number=identification_number,
-                 email= email, contact_number=contact_number, address= address, postal_code= postal_code, password=generate_password_hash(password))
+                 email= email, contact_number=contact_number, address= address,city=city, postal_code= postal_code, password=generate_password_hash(password))
                 db.session.add(data)
                 db.session.commit()
-            return jsonify({'name': name})
-        else:
-            return jsonify({'error': 'Υπάρχουν κενά πεδία. Παρακαλώ όπως συμπληρωθούν!'})
+                return jsonify({'name': name})
+                # return redirect(url_for('index'))
+            else:
+                return redirect('signup')
+        else:            
+            return redirect('signup')
     
-    return render_template('index1.html')
+    # return redirect(url_for('index'))
+    return jsonify({'name': name})
 @app.route("/")
-def index():
-    # if request.method == "GET":
-    #     form = ReusableForm()
-    #     return render_template('index1.html', form=form)
-
-    # if request.method == 'POST':
-    #     form = ReusableForm(request.form)
-    #     name = request.form['name']
-    #     surname = request.form['surname']
-    #     identification_method = request.form['identification_method']
-    #     identification_method = request.form['identification_method']
-    #     identification_number = request.form['identification_number']
-    #     email = request.form['email']
-    #     contact_number=request.form['contact_number']
-    #     address = request.form['address']
-    #     city = request.form['city']
-    #     postal_code = request.form['postal_code']
-    #     username= request.form['username']
-    #     password = request.form['password']
-    #     # print(name,surname,identification_method,identification_number,email,contact_number,address,city,postal_code,username,password)
-    #     print(request.form)
-    #     if form.validate_on_submit():
-    #         write_to_disk(name, surname, email)        
-    #         flash('Καλωσόρισες {} {}'.format(name,surname))
-    #     else:
-    #         flash('Αποτυχία Εγγραφής. Όλα τα στοιχεία είναι απαραίτητα.')    
+def index():   
     return render_template('index1.html')                
 
 if __name__ == "__main__":    
