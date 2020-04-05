@@ -1,0 +1,99 @@
+{% extends 'index1.html' %}
+
+{% block script%}
+<script type="text/javascript">
+$(document).ready(function(){
+	var account = localStorage.getItem('account');
+	var method = localStorage.getItem('method');
+	$("#home").click(function(){		
+	$("#home").attr("href", "/homepage/"+method+"/"+account);	  
+	});
+
+   $("#profile").click(function(){   
+     $("#profile").attr("href", "/profile_edit/"+method+"/"+account); 
+   });   
+});
+</script>
+{%endblock%}
+{% block profile%}
+<li class="nav-item"> 
+    <a class="nav-link" id="home" href="">Αρχική</a>
+  </li>
+<li class="nav-item">
+  <a class="nav-link" id="profile" href="">Προφίλ</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/" id="logout">Αποσύνδεση</a>
+  </li>
+{%endblock%}
+{% block title%}
+<h2> Επεξεργασία στοιχείων </h2>
+{%endblock%}
+{% block content%}
+<div class="col-md-4">
+        <form  action="" method="post" role="form" id="fm">                    
+          <div class="form-group">
+            <label for="name">Όνομα:</label>
+            <input type="text" class="form-control" id="name" name="name" value={{name}} autofocus>
+            <br>
+            <label for="surname">Επίθετο:</label>
+            <input type="text" class="form-control" id="surname" name="surname" value ={{surname}} >
+            <br>
+            <label for="identification_method">Ταυτότητα / Διαβατήριο:</label>
+            <select class="form-control" id="identification_method" name="identification_method" onchange="changePriorDistType()" style=" height: 34px; line-height: 1,5;" >
+              <option id="identification_method" selected value="0"> </option>
+              <option  id="identification_method" name="identification_method" value="1">Αριθμός Ταυτότητας</option>
+              <option  id="identification_method" name="identification_method" value="2">Αριθμός Διαβατηρίου</option>
+            </select>
+            <br>
+            <label for="identification_number">Αριθμός Ταυτότητας:</label>
+            <input type="text" class="form-control" id="identification_number" name="identification_number" value={{identification_number}}>
+            <br>
+
+            <label for="address">Διεύθυνση:</label>
+            <input type="text" class="form-control" id="address" name="address" value={{address}}>
+            <br>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="city">Πόλη</label>
+                <select id="city" name="city" class="form-control" style=" height: 34px; line-height: 1,5;" >
+                  <option selected name="city" id="city" value="">Επιλογή Πόλης</option>
+                  <option  name="city" id="city" value="Λευκωσία">Λευκωσία</option>
+                  <option  name="city" id="city" value="Λάρνακα">Λάρνακα</option>
+                  <option  name="city" id="city" value="Λεμεσός">Λεμεσός</option>
+                  <option  name="city" id="city" value="Πάφος">Πάφος</option>
+                  <option  name="city" id="city" value="Αμμόχωστος">Αμμόχωστος</option>
+                </select>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="inputCity">Τ.Κ</label>
+                <input type="number" class="form-control" id="postal_code"  onkeypress="return isNumber(event)" onpaste="return false;" name="postal_code" value={{postal_code}}>
+              </div>
+            </div>
+            <label for="contact_number">Τηλέφωνο Επικοινωνίας:</label>
+            <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="contact_number" name="contact_number" value={{contact_number}}>
+            <br>
+            <label for="email">Ηλεκτρονικό Ταχυδρομείο: (μη υποχρεωτικό πεδίο)</label>
+            <input type="text" class="form-control" id="email" name="email" value={{email}}>
+            <label for="password">Κωδικός Χρήστη:</label>
+            <input type="password" class="form-control" id="password" name="password" value={{password}}>
+            <br>
+            <label for="password">Επαλήθευση Κωδικού Χρήστη:</label>
+            <input type="password" class="form-control" id="password" name="password" onpaste="return false;" value={{password}}>
+          </div>
+          <br>                             
+          <center>
+            <button type="submit" id="submit" class="btn btn-success">Εγγραφή</button>
+          </center>
+        </form>        
+        
+        <div class="alert alert-success" id="successAlert" role="alert" style="display: none">
+        </div>
+        <div class="alert alert-danger" id="errorAlert" role="alert" style="display: none">
+        </div>
+        <br>
+      </div>
+    </div>
+
+</div>
+{%endblock%}

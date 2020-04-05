@@ -1,17 +1,249 @@
 {% extends 'index1.html' %}
+
+{% block script%}
+<script type="text/javascript">
+  $(document).ready(function(){
+   var account = localStorage.getItem('account');
+   var method = localStorage.getItem('method');
+
+   $("#home").click(function(){		
+     $("#home").attr("href", "/homepage/"+method+"/"+account);	
+   });   
+   
+   $('.table tbody tr').click(function(event) {
+    if (event.target.type !== 'radio') {
+      $(':radio', this).trigger('click');
+    }
+  });
+
+   $('table').on('scroll', function() {
+    $("#" + this.id + " > *").width($(this).width() + $(this).scrollLeft());
+  });
+
+   $(document).on('click','td',function(){
+    $(this).find('input [type="radio"]').prop('checked',true);
+    $("#hidden").show();
+  });
+
+   $("#profile").click(function(){   
+     $("#profile").attr("href", "/profile_edit/"+method+"/"+account); 
+   });   
+   $("div.desc").hide();
+   $("input[name$='optradio']").click(function() {
+    var test = $(this).val();      
+    $("div.desc").show();
+    $("#" + test).hide();
+
+if( /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) ) {
+    $('#medicines').selectpicker('mobile');
+}
+  });        
+
+
+
+   $('input:radio[name="optradio"]').on('change.allChanges',
+    function () {      
+      $('html, body').animate({
+        scrollTop: $(".selectpicker").offset().top
+      }, 1500);
+    }
+    );
+
+ });
+//double click to remove select from radio button
+ // $(function(){
+ //        $('input[name="optradio"]').click(function(){
+ //            var $radio = $(this);
+
+ //            // if this was previously checked
+ //            if ($radio.data('waschecked') == true)
+ //            {
+ //                $radio.prop('checked', false);
+ //                $radio.data('waschecked', false);
+ //                alert("A");
+ //            }
+ //            else{ alert("b");
+ //                $radio.data('waschecked', true);
+ //              }
+
+ //            // remove was checked from other radios
+ //            $radio.siblings('input[type="radio"]').data('waschecked', false);
+ //        });
+ //    });
+
+
+function isNumber(evt) {
+        evt = (evt) ? evt : window.event;
+        var charCode = (evt.which) ? evt.which : evt.keyCode;
+        if ( (charCode > 31 && charCode < 48) || charCode > 57) {
+            alert("Το πεδίο αυτό δέχεται μόνο αριθμούς");
+            return false;
+        }        
+        return true;
+    }
+
+
+    window.onload = function() {
+        var eSelect = document.getElementById('medicines');        
+        eSelect.onchange = function() {
+            var value = $( "#medicines_name" ).val();
+            $("#table_extra_medicines").append("<tr><td>"+value+"</td><td style='text-align: center;'><div><input min='0' step='1' type='number' id='quantity' onkeypress='return isNumber(event)' style='text-align:center; width:100px;' name='number'></div></td></tr>");
+
+                 // $('#table_extra_medicines').append(
+                 //    "<tr><td>"+value+"</td><td style='text-align: center;'><div><input min='0' step='1' type='number' id='quantity' onkeypress='return isNumber(event)' style='text-align:center; width:100px;' name='number'></div></td></tr>" 
+                 //  );
+        }
+    }
+
+</script>
+{%endblock%}
+
+
 {% block profile%}
+<li class="nav-item">	
+  <a class="nav-link" id="home" href="">Αρχική</a>
+</li>
 <li class="nav-item">
-    <a class="nav-link" href="signup">Προφίλ</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" href="signup">Αποσύνδεση</a>
-  </li>
+  <a class="nav-link" id="profile" href="">Προφίλ</a>
+</li>
+<li class="nav-item">
+  <a class="nav-link" href="/" id="logout">Αποσύνδεση</a>
+</li>
+{%endblock%}
+
+{% block title%}
+<h2 id="title">Καλωσορίσατε {{ name }}</h2>
 {%endblock%}
 {% block content%}
-<p>asdfsadfsad</p>
 
-<br><br><br><br><br><br><br><br><br>
-
-{% include 'map.html' %}
+<div class="col-md-9"> 
+</div>
 {%endblock%}
- 
+{% block map%}
+<div class="container" style="height: 65%;">
+  <div class="col-md-12"> 
+    {% include 'map.html' %}
+  </div>    
+</div>
+<br>
+{%endblock%}
+
+{% block pharmacies%}
+<div class="table_outer" id='pharmacies_table'>
+  <div class="container" >
+    <div class="col-md-12"> 
+      <div class="panel panel-primary">
+        <div class="panel-heading">ΣΤΟΙΧΕΙΑ ΠΛΗΣΙΕΣΤΕΡΩΝ ΦΑΡΜΑΚΕΙΩΝ</div>
+
+        <!-- Table -->
+        <table class="table" id="table_pharmacies">
+          <thead>    
+            <tr>
+              <th scope="col">Distance (km)</th>
+              <th scope="col">Ταυτότητα</th>
+              <th scope="col">Longitude</th>
+              <th scope="col">Latitude</th>
+              <th scope="col">Select</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data %}
+            <tr>
+              <td>{{row['distance']}}</td>
+              <td>{{row['identification_number']}}</td>
+              <td>{{row['lat_ph']}}</td>
+              <td>{{row['lon_ph']}}</td>
+              <td style="text-align: center;">
+                <div class="radio">
+                 <label>
+                  <input type="radio" id="optradio" name="optradio">TIKI
+                </label>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<style>
+  thead th {
+    position:sticky;
+    background-color: #F3F3F3;
+    color: black;  
+    top: 0;
+    text-align:center;  
+  }
+  .panel-heading{
+    text-align:center;
+    font-size: 25px;
+  }
+  tbody td{
+    text-align:center;
+  }
+  .table tbody {
+    display: block;
+    max-height: 300px;
+    overflow-y: scroll;
+  }
+
+  .table thead, tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  tr:hover { 
+    background-color: #E0FFFF;
+  }
+
+</style>
+
+{%endblock%}
+
+
+{%block hidden %}
+<div id="threeCarDiv" class="desc">
+  <div class="container">
+    <div class="row align-items-center justify-content-center">
+      <div class="col-sm-11">
+        <form role="form">
+          <div class="form-group">            
+              <label for="selectpicker">Επιλογή επιπρόσθετων φαρμάκων στην παραγγελία: </label><br>
+              <select class="form-control selectpicker show-tick" id="medicines" multiple data-size="7" data-live-search="true" title="Επιλογή φαρμάκων" >
+                {% for row in med %}
+                <option id="medicines_name" style="font-size: 11;"data-tokens={{row['Όνομα Φαρμακευτικού Προϊόντος']}}>{{row['Όνομα Φαρμακευτικού Προϊόντος']}} {{row['Συσκευασία']}}</option>                
+                {% endfor %}
+              </select>
+            </div>
+          <div class="panel panel-primary">
+        <div class="panel-heading">ΛΙΣΤΑ ΕΠΙΠΡΟΣΘΕΤΩΝ ΦΑΡΜΑΚΩΝ</div>
+
+        <!-- Table -->
+        <table class="table" id="table_extra_medicines">
+          <thead>    
+            <tr>
+              <th scope="col">Ονομασία</th>
+              <th scope="col">Ποσότητα</th>              
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in data %}            
+          {% endfor %}
+        </tbody>
+      </table></div>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox"> Αίτηση φαρμάκων με βάση τα στοιχεία μου από το ΓεΣΥ.
+            </label>
+          </div>
+          <button type="submit" class="btn btn-default">Αποστολή αίτησης φαρμάκων στο πλησιέστερο φαρμακεία</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{%endblock%}

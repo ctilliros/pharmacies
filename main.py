@@ -1,6 +1,6 @@
 from random import randint
 from time import strftime
-from flask import Flask, render_template, flash, request, jsonify, redirect, url_for
+from flask import Flask, render_template, flash, request, jsonify, redirect, url_for, session
 from wtforms import Form, TextField, TextAreaField, validators, StringField, SubmitField, SelectField, Field, PasswordField
 from wtforms.validators import InputRequired, Email,Optional, DataRequired
 from flask_sqlalchemy import SQLAlchemy
@@ -9,6 +9,7 @@ from flask_migrate import Migrate, MigrateCommand
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_bcrypt import Bcrypt
 from sqlalchemy import or_
+import folium
 DEBUG = True
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -18,7 +19,9 @@ app.config['WTF_CSRF_ENABLED'] = True
 app.config['JSON_SORT_KEYS'] = False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = postgres_url
-
+app.config["DEBUG"] = True
+file_farmakia = 'farmakia.json'
+import json
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 migrate = Migrate(app, db)
@@ -79,6 +82,8 @@ class LoginForm(Form):
     ])
     submit = SubmitField('Submit')
 
+
+
 @app.route("/signup", methods=['POST','GET'])
 def signup():    
     return render_template('signup.html')
@@ -88,10 +93,12 @@ def signup():
 #     print("2")
 #     return render_template('login.html')
 
+
 @app.route("/login", methods=['POST','GET'])
 def login(): 
     if request.method == 'POST':
         identification_method = request.form['identification_method']
+        ident1 = identification_method
         if (identification_method == 'Ταυτότητα'):             
             identification_number = request.form['identification']            
             identification = identification_number                 
@@ -107,8 +114,6 @@ def login():
             email=request.form['identification']
             identification = email
         password = request.form['password']   
-        
-
         if (identification != '') or (password != ""):
             if (identification_method == 1) or (identification_method == 2) :
                 records = Database.query.filter(Database.identification_method == identification_method,
@@ -121,29 +126,26 @@ def login():
             if records:                
                 authenticated_user = check_password_hash(records.password,password)
                 if authenticated_user:  
+                    session['identification_number'] = identification
                     create_map(identification_method,identification)
-                    return redirect(url_for('profile',identification_method = identification_method, identification=identification, scheme = 'https'))
+                    return jsonify(200)
+                    # return redirect(url_for('homepage',identification_method = ident1, identification=identification, scheme = 'https'))
                 else:                    
                     return redirect('index1.html')                    
             else:                            
                 return redirect('index1.html')        
     # return redirect(url_for('profile',identification=identification, scheme = 'https'))
 
-def method(identification_method):
-    if (identification_method == 'Ταυτότητα'):
-        method = 'id'
-    elif (identification_method =='Διαβατήριο'):
-        method = 'passport'
-    elif (identification_method =='Τηλέφωνο Επικοινωνίας'):
-        method = 'contact'
-    elif (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
-        method ='email' 
-    return method
+@app.route('/logout')
+def logout():
+    if 'identification_number' in session:
+        session.pop('identification_number', None)
+    return jsonify({'message' : 'You successfully logged out'})
+
 
 
 def create_map(identification_method,identification):
     import overpy
-    file_farmakia = 'farmakia.json'
     import os 
     import json
     from os import path
@@ -203,13 +205,9 @@ def create_map(identification_method,identification):
         lat =35.039440
         lon = 33.981689
 
-    m = folium.Map(location=[lat, lon], zoom_start=12, zoom_control=True, tiles='cartodbpositron',
-                   # tiles='https://api.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiY3RpbGxpcm9zIiwiYSI6ImNrN2x2N2kxYjBibjMzZXBpZWM4dzA0aHgifQ.xLqa4xq-nIfPAlyYk0UD9A',
-                   # attr="bottomright",
-                   # min_zoom=13,
-                   # max_lat=35.33393, min_lat=35.01393, max_lon=33.524726, min_lon=33.204726, max_bounds=True,
-                   control_scale=True)    
+    m, lathouse, lonhouse = add_house(records.address, records.postal_code, records.city)
     from folium.plugins import LocateControl, Fullscreen
+    
     Fullscreen(
             title='Expand me',
             title_cancel='Exit fullscreen',
@@ -221,26 +219,156 @@ def create_map(identification_method,identification):
 
     with open(file_farmakia, 'r') as f:
         data = json.load(f)
-    
+    import pandas as pd
+    pharmacies = pd.DataFrame(columns={'distance','identification_number','lat_ph','lon_ph'})
+    # lala['lat_ph'] = lala['lat_ph'].round(8)
+
     for i in data:
         lat = i[0]
         lon = i[1]
-        folium.Marker([lon,lat]).add_to(m)
-
+  
+        import math
+        dist = math.sqrt((float(lat) - float(lonhouse))**2 + (float(lon) - float(lathouse))**2)      
+        pharmacies =pharmacies.append({'distance':dist,'identification_number':records.identification_number, 'lat_ph':lat,'lon_ph':lon},ignore_index=True)
+        pd.set_option('max_rows',1000)        
+        folium.Marker([lon,lat], tooltip=[lat,lon]).add_to(m)
+    # print(lala)
+    min_dist= pharmacies['distance'].min()
+    # print(lala.query('distance=={}'.format(min_dist))['lat_ph'], lala.query('distance=={}'.format(min_dist))['lon_ph'])
+    pharmacies = pharmacies.sort_values('distance').reset_index()
     
     m.save('templates/map.html')
     return identification
-    
-    
 
 
-@app.route('/profile/<identification_method>/<identification>', methods=['POST','GET'])
-def profile(identification_method,identification):           
-    return render_template('login.html')
+def add_house(address, postal_code,city):
+    from geopy.geocoders import Nominatim
+    locator = Nominatim(user_agent="myGeocord") 
+    # address = 'Υδρας'
+    # city='Λευκωσία'
+    # postal_code ='2682'
+    location = locator.geocode(address+", "+city+", "+postal_code+"")
+    if location == None:
+        address= address.lower()
+        address = address.replace("α", "a")
+        address = address.replace("β", "v")
+        address = address.replace("γ", "g")
+        address = address.replace("δ", "d")
+        address = address.replace("ε", "e")
+        address = address.replace("ζ", "z")
+        address = address.replace("η", "i")
+        address = address.replace("θ", "th")
+        address = address.replace("ι", "i")
+        address = address.replace("κ", "k")
+        address = address.replace("λ", "l")
+        address = address.replace("μ", "m")
+        address = address.replace("ν", "n")
+        address = address.replace("ξ", "x")
+        address = address.replace("ο", "o")
+        address = address.replace("π", "p")
+        address = address.replace("ρ", "r")
+        address = address.replace("σ", "s")
+        address = address.replace("τ", "t")
+        address = address.replace("υ", "y")
+        address = address.replace("φ", "f")
+        address = address.replace("χ", "ch")
+        address = address.replace("ψ", "ps")
+        address = address.replace("ω", "o")
+        address = address.replace("ς", "s")
+        address = address.replace("ά", "a")
+        address = address.replace("έ", "e")
+        address = address.replace("Ύ", "y")
+        address = address.replace("ύ", "u")
+        address = address.replace("ί", "i")
+        address = address.replace("ό", "o")
+        address = address.replace("ή", "i")
+        address = address.replace("ώ", "o")
+        location = locator.geocode(address+", "+city+", "+postal_code+"")
 
+    lat = location.raw['lat']
+    lon = location.raw['lon']
+    m = folium.Map(location=[lat, lon], zoom_start=12, zoom_control=True, 
+                   # tiles='https://api.mapbox.com/v4/mapbox.light/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiY3RpbGxpcm9zIiwiYSI6ImNrN2x2N2kxYjBibjMzZXBpZWM4dzA0aHgifQ.xLqa4xq-nIfPAlyYk0UD9A',
+                   # attr="bottomright",
+                   # min_zoom=13,
+                   # max_lat=35.33393, min_lat=35.01393, max_lon=33.524726, min_lon=33.204726, max_bounds=True,
+                   control_scale=True)  
+    folium.TileLayer('cartodbpositron').add_to(m)  
+    folium.Marker([location.raw['lat'],location.raw['lon']],icon=folium.Icon(color='green',icon='home', prefix='fa')).add_to(m)
+    folium.LayerControl().add_to(m)
+    return m, lat, lon
+
+
+
+@app.route('/homepage/<identification_method>/<identification>', methods=['POST','GET'])
+def homepage(identification_method,identification): 
+    if (identification_method == 'Ταυτότητα'):             
+        identification_method = 1
+    elif (identification_method == 'Διαβατήριο'):
+        identification_method = 2
+    if (identification_method == 1) or (identification_method == 2) :
+        records = Database.query.filter(Database.identification_method == identification_method,\
+            Database.identification_number == identification).first()   
+    elif (identification_method == 'Τηλέφωνο Επικοινωνίας'):
+        records = Database.query.filter(Database.contact_number == identification).first()
+    elif (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
+        records = Database.query.filter(Database.identification_number == identification).first()
+    x, lathouse, lonhouse = add_house(records.address, records.postal_code, records.city)
     
+    with open(file_farmakia, 'r') as f:
+        data = json.load(f)
+    import pandas as pd
+    pharmacies = pd.DataFrame(columns={'distance','identification_number','lat_ph','lon_ph'})
+
+    for i in data:
+        lat = i[0]
+        lon = i[1]
+        import math
+        dist = math.sqrt((float(lat) - float(lonhouse))**2 + (float(lon) - float(lathouse))**2) *100     
+        pharmacies =pharmacies.append({'distance':round(dist,2),'identification_number':records.identification_number, 'lat_ph':lat,'lon_ph':lon},ignore_index=True)
+        pd.set_option('max_rows',1000)            
+    
+    min_dist= pharmacies['distance'].min()
+    
+    pharmacies = pharmacies.sort_values('distance').reset_index()
+    
+    # return render_template('login.html', tables=[pharmacies.to_html(classes='table_outer container col-md-12 panel panel-primary', header="true")])
+    # return render_template('login.html')
+    medicines = 'medicines.xls'
+    med = pd.read_excel(medicines)
+    return render_template('login.html', data=pharmacies.to_dict(orient='records'), name=records.name, med = med.to_dict(orient='records'))
+
+
+@app.route('/profile_edit/<identification_method>/<identification>', methods=['POST','GET'])
+def profile_edit(identification_method,identification):           
+    name,surname, identification_method,identification_number,email,contact_number,\
+    address,city,postal_code = get_name(identification_method,identification)          
+    return render_template('profile.html', name=name, surname = surname, identification_method=identification_method,\
+        identification_number=identification_number,email=email, contact_number=contact_number, address=address, postal_code=postal_code,\
+        city=city)
+
+
+@app.route("/get_name", methods=['POST','GET'])
+def get_name(identification_method,identification):        
+    if (identification_method == 'Ταυτότητα'):                     
+        identification_method = 1
+    elif (identification_method == 'Διαβατήριο'):
+        identification_method = 2
+
+
+    if (identification_method == 1) or (identification_method == 2) :
+                records = Database.query.filter(Database.identification_method == identification_method,
+                Database.identification_number == identification).first()            
+    if (identification_method == 'Τηλέφωνο Επικοινωνίας'):  
+        records = Database.query.filter(Database.contact_number == identification).first()
+    if (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
+        records = Database.query.filter(Database.identification_number == identification).first()
+    return records.name, records.surname, records.identification_method, records.identification_number, \
+        records.email, records.contact_number,records.address,records.city, records.postal_code
+               
+
 @app.route("/signup_post", methods=['POST','GET'])
-def signup_post():            
+def signup_post():      
     if request.method == 'POST':
         name = request.form['name']
         surname = request.form['surname']
@@ -251,7 +379,7 @@ def signup_post():
         address = request.form['address']
         city = request.form['city']
         postal_code = request.form['postal_code']        
-        password = request.form['password']                        
+        password = request.form['password'] 
         if (name!='' and surname!='' and identification_method!='' and identification_number!='' 
             and contact_number!='' and address!='' and city!='' and postal_code!='' and password!='' ):            
             records = Database.query.filter(or_(Database.identification_number == identification_number,
@@ -263,7 +391,6 @@ def signup_post():
                 db.session.add(data)
                 db.session.commit()
                 return jsonify({'name': name})
-                # return redirect(url_for('index'))
             else:
                 return redirect('signup')
         else:            
@@ -273,8 +400,9 @@ def signup_post():
     return jsonify({'name': name})
 @app.route("/")
 def index():   
-    return render_template('index1.html')                
+    return render_template('index1.html') 
+
 
 if __name__ == "__main__":    
     db.create_all()
-    app.run(port=5001)
+    app.run(debug=True, port = 5001)

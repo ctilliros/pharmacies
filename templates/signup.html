@@ -1,21 +1,5 @@
 {%extends 'index1.html' %}
-{% block style_scipt%}
-
-  <style type="text/css">
-    /* Remove arrows from input number text box */
-    /* Chrome, Safari, Edge, Opera */
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    /* Firefox */
-    input[type=number] {
-      -moz-appearance: textfield;
-    }
-    /* ============================================= */    
-  </style>
+{% block script%}
   <script type="text/javascript">
     $(document).ready(function(){
       $('form').on('submit', function(event){
@@ -36,7 +20,7 @@
           url:'/signup_post',
         })
         .done(function(data){
-          if (data.error){
+          if (data.error){            
             $('#errorAlert').text(data.error).show();
             $('#successAlert').hide();
             var name=$("#name").val();
@@ -86,7 +70,7 @@
         // Move to a new location or you can do something else
         window.location.href = "/";
 
-      }, 1000);
+      }, 100);
           }
         })
         ;
@@ -115,16 +99,10 @@ function isNumber(evt) {
     }
   </script>
 {%endblock%}
-
-  {% block content%}
-
-  <div class="container"><br>
-    <center>
+{% block title%}
       <h2>Συμπλήρωση στοιχείων για εγγραφή στο σύστημα    </h2>
-    </center>
-  </div>
-  <div class=container"><br>
-    <div class="row align-items-center justify-content-center">
+  {%endblock%}
+{% block content%}
       <div class="col-md-4">
         <form  action="" method="post" role="form" id="fm">                    
           <div class="form-group">
@@ -135,7 +113,7 @@ function isNumber(evt) {
             <input type="text" class="form-control" id="surname" name="surname" placeholder="Ανδρέου">
             <br>
             <label for="identification_method">Ταυτότητα / Διαβατήριο:</label>
-            <select class="form-control" id="identification_method" name="identification_method" onchange="changePriorDistType()">
+            <select class="form-control" id="identification_method" name="identification_method" onchange="changePriorDistType()" style=" height: 34px; line-height: 1,5;" >
               <option id="identification_method" selected value="0"> </option>
               <option  id="identification_method" name="identification_method" value="1">Αριθμός Ταυτότητας</option>
               <option  id="identification_method" name="identification_method" value="2">Αριθμός Διαβατηρίου</option>
@@ -151,8 +129,8 @@ function isNumber(evt) {
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="city">Πόλη</label>
-                <select id="city" name="city" class="form-control">
-                  <option selected name="city" id="city" value="0">Επιλογή Πόλης</option>
+                <select id="city" name="city" class="form-control" style=" height: 34px; line-height: 1,5;" >
+                  <option selected name="city" id="city" value="">Επιλογή Πόλης</option>
                   <option  name="city" id="city" value="Λευκωσία">Λευκωσία</option>
                   <option  name="city" id="city" value="Λάρνακα">Λάρνακα</option>
                   <option  name="city" id="city" value="Λεμεσός">Λεμεσός</option>
@@ -168,7 +146,7 @@ function isNumber(evt) {
             <label for="contact_number">Τηλέφωνο Επικοινωνίας:</label>
             <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="contact_number" name="contact_number" placeholder="99123456">
             <br>
-            <label for="email">Ηλεκτρονικό Ταχυδρομείο: (όχι υποχρεωτικό)</label>
+            <label for="email">Ηλεκτρονικό Ταχυδρομείο: (μη υποχρεωτικό πεδίο)</label>
             <input type="text" class="form-control" id="email" name="email" placeholder="test@test.com"><br>
             <label for="password">Κωδικός Χρήστη:</label>
             <input type="password" class="form-control" id="password" name="password" placeholder="Εισαγωγή κωδικού.">
