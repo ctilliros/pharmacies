@@ -1,7 +1,7 @@
 <html>
 <head>
   <title>Demo Form</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1  maximum-scale=1">
   <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"/>
@@ -43,8 +43,10 @@
 
   {% block script%}
 
-  <script type="text/javascript">
+  <script type="text/javascript">    
+
     $(document).ready(function(){
+
       $("div.desc").hide();
       
       $(document).bind("contextmenu",function(e) {
@@ -85,7 +87,7 @@
             localStorage.setItem("method", method); //send value to other page
             localStorage.setItem("account", account);
             window.location.href = "/homepage/"+method+"/"+account;
-          }, 100);          
+          }, 1);          
         }).
         fail(function(){
           clearfield();
@@ -118,6 +120,9 @@
   {% endblock %}
 </head>
 <body>
+  <!-- For creating spin loading
+    https://www.geeksforgeeks.org/how-to-show-page-loading-div-until-the-page-has-finished-loading/ 
+  -->
   <!-- Navbar  -->
   <nav class="navbar navbar-expand-lg navbar-default bg-primary">
     <ul class="navbar-nav ml-auto">
@@ -164,7 +169,7 @@
           </div>
           <br>                             
           <center>
-            <button type="submit" id="submit" class="btn btn-success">Σύνδεση</button>
+            <button type="submit" id="submit" class="btn btn-success" data-loading-text="Loading...">Σύνδεση</button>
           </center>
         </form>        
         <p> Δεν έχεις λογαριασμό; <a href="signup">Δημιούργησε τώρα!</a> </p> 
@@ -184,6 +189,9 @@
   {% block hidden %}
   {%endblock%}
   <!-- End blocks  -->
+
+<div class="loader"></div>
+
 
   <!-- Footer -->
   <footer class="page-footer font-small blue">        

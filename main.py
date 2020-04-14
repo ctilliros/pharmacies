@@ -24,6 +24,7 @@ file_farmakia = 'farmakia.json'
 import json
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+
 migrate = Migrate(app, db)
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
@@ -96,7 +97,9 @@ def signup():
 
 @app.route("/login", methods=['POST','GET'])
 def login(): 
+    print("here")
     if request.method == 'POST':
+        print("here1")
         identification_method = request.form['identification_method']
         ident1 = identification_method
         if (identification_method == 'Ταυτότητα'):             
@@ -174,6 +177,8 @@ def create_map(identification_method,identification):
         
         with open(file_farmakia,'w') as f:
             json.dump(coords, f, indent=4 )
+
+
     import folium
     if (identification_method == 'Ταυτότητα'):             
         identification_method = 1
@@ -326,7 +331,7 @@ def homepage(identification_method,identification):
         import math
         dist = math.sqrt((float(lat) - float(lonhouse))**2 + (float(lon) - float(lathouse))**2) *100     
         pharmacies =pharmacies.append({'distance':round(dist,2),'identification_number':records.identification_number, 'lat_ph':lat,'lon_ph':lon},ignore_index=True)
-        pd.set_option('max_rows',1000)            
+        pd.set_option('max_rows',40)            
     
     min_dist= pharmacies['distance'].min()
     
@@ -335,9 +340,15 @@ def homepage(identification_method,identification):
     # return render_template('login.html', tables=[pharmacies.to_html(classes='table_outer container col-md-12 panel panel-primary', header="true")])
     # return render_template('login.html')
     medicines = 'medicines.xls'
+    pd.set_option('max_columns',1000)
     med = pd.read_excel(medicines)
-    return render_template('login.html', data=pharmacies.to_dict(orient='records'), name=records.name, med = med.to_dict(orient='records'))
+    med.columns=['code','name','packing','ingredient','license','pricing_representative','pricing']
+    med = med[med['pricing'] != 'Εξαίρεση αναγραφής τιμής στον τιμοκατάλογο (Κανονισμός 4, ΚΔΠ 98/2019)']    
+    med = med.replace(',',' ',regex=True)    
+    # med = med[med['pricing'] != 'Εξαίρεση αναγραφής τιμής στον τιμοκατάλογο (Κανονισμός 4, ΚΔΠ 98/2019)']
+    # med = med[~med['pricing'].contains('Εξαίρεση')]
 
+    return render_template('login.html', pharmacies=pharmacies.to_dict(orient='records'), name=records.name, med = med.to_dict(orient='records'))
 
 @app.route('/profile_edit/<identification_method>/<identification>', methods=['POST','GET'])
 def profile_edit(identification_method,identification):           
@@ -363,6 +374,7 @@ def get_name(identification_method,identification):
         records = Database.query.filter(Database.contact_number == identification).first()
     if (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
         records = Database.query.filter(Database.identification_number == identification).first()
+
     return records.name, records.surname, records.identification_method, records.identification_number, \
         records.email, records.contact_number,records.address,records.city, records.postal_code
                
@@ -398,6 +410,72 @@ def signup_post():
     
     # return redirect(url_for('index'))
     return jsonify({'name': name})
+
+@app.route("/update", methods=['POST','GET'])
+def update():
+    if request.method=='GET':
+        print("get")
+    else:
+        name = request.form['name']
+        print(name)
+        surname = request.form['surname']
+        identification_method = request.form['identification_method']
+        identification_number = request.form['identification_number']
+        email = request.form['email']
+        contact_number=request.form['contact_number']
+        address = request.form['address']
+        city = request.form['city']
+        postal_code = request.form['postal_code']        
+        password = request.form['password']
+        if (name!='' and surname!='' and identification_method!='' and identification_number!='' 
+            and contact_number!='' and address!='' and city!='' and postal_code!='' and password!=''): 
+            records = Database.query.filter(Database.identification_number==identification_number).one()
+            records.name = name
+            records.surname = surname
+            records.identification_method=identification_method
+            records.email=email
+            records.contact_number=contact_number
+            records.address = address 
+            records.city = city
+            records.postal_code = postal_code
+            records.password = generate_password_hash(password)
+            # records = update(Database).where(Database.identification_number==identification_number).values(name=name, 
+            #     surname=surname, identification_method=identification_method, email=email,
+            #     contact_number=contact_number, address=address,city=city,postal_code=postal_code, password = generate_password_hash(password))
+            db.session.commit()
+
+    return (200)
+
+@app.route("/delete", methods=['POST','GET'])
+def delete():
+    if request.method=='POST':    
+        name = request.form['name']
+        surname = request.form['surname']
+        identification_method = request.form['identification_method']
+        identification_number = request.form['identification_number']
+        email = request.form['email']
+        contact_number=request.form['contact_number']
+        address = request.form['address']
+        city = request.form['city']
+        postal_code = request.form['postal_code']        
+        password = request.form['password']
+        if (identification_number!='' and contact_number!='' ): 
+            # records = Database.query.filter(or_(Database.identification_number == identification_number, \
+            #     Database.contact_number == contact_number)).delete()
+            # db.session.commit()            
+            # db.session.execute()
+            print("prin")
+            # data = Database(identification_number==identification_number)
+            user = Database.query.filter(Database.identification_number==identification_number).one()
+            db.session.delete(user)
+            print("delete")
+            db.session.commit()
+            if 'identification_number' in session:
+                session.pop('identification_number', None)
+            # return jsonify({'message' : 'You successfully logged out'})            
+            return redirect('index1.html')
+    # return redirect('/logout')
+
 @app.route("/")
 def index():   
     return render_template('index1.html') 
