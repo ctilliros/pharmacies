@@ -167,8 +167,8 @@ function updatetotal(){
 <div class="table_outer" id='pharmacies_table'>
   <div class="container" >
     <div class="col-md-12"> 
-      <div class="panel panel-primary">
-        <div class="panel-heading">ΣΤΟΙΧΕΙΑ ΠΛΗΣΙΕΣΤΕΡΩΝ ΦΑΡΜΑΚΕΙΩΝ</div>
+    <div class="card text-center">
+        <div class="card-header">ΣΤΟΙΧΕΙΑ ΠΛΗΣΙΕΣΤΕΡΩΝ ΦΑΡΜΑΚΕΙΩΝ</div>
 
         <!-- Table -->
         <table class="table" id="table_pharmacies">
@@ -212,10 +212,7 @@ function updatetotal(){
     top: 0;
     text-align:center;  
   }
-  .panel-heading{
-    text-align:center;
-    font-size: 25px;
-  }
+  
   tbody td{
     text-align:center;
   }
@@ -234,7 +231,11 @@ function updatetotal(){
   tr:hover { 
     background-color: #E0FFFF;
   }
+.card-header{
+  background-color: #3399FF;
+      font-size: 25px;
 
+}
 </style>
 
 {%endblock%}
