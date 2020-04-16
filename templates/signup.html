@@ -1,31 +1,37 @@
 {%extends 'index1.html' %}
 {% block script%}
-  <script type="text/javascript">
-    $(document).ready(function(){
-      $('form').on('submit', function(event){
-        $.ajax({
-          data:{
-            name:$("#name").val(),
-            surname:$("#surname").val(),
-            identification_method:$("#identification_method").val(),
-            identification_number:$("#identification_number").val(),
-            email:$("#email").val(),
-            contact_number:$("#contact_number").val(),
-            address:$("#address").val(),
-            city:$("#city").val(),
-            postal_code:$("#postal_code").val(),
-            password:$("#password").val()
+<script type="text/javascript">
+  $(document).ready(function(){
+    $('form').on('submit', function(event){      
+      $.ajax({
+        data:{
+          name:$("#name").val(),
+          surname:$("#surname").val(),
+          street_number:$("#street_number").val(),
+          identification_number:$("#identification_number").val(),
+          email:$("#email").val(),
+          contact_number:$("#contact_number").val(),
+          address:$("#address").val(),
+          city:$("#city").val(),
+          postal_code:$("#postal_code").val(),
+          password:$("#password").val()
+        },
+        type: 'POST',
+        url:'/signup_post',
+        statusCode: {
+          200: function() {              
+            alert('Καλωσορίσατε. Θα μεταφερθείτε αυτόματα στην αρχική σελίδα για σύνδεση στο σύστημα.');
           },
-          type: 'POST',
-          url:'/signup_post',
-        })
-        .done(function(data){
-          if (data.error){            
-            $('#errorAlert').text(data.error).show();
+          400: function() {
+            alert('Τα στοιχεία τα οποία έχεται δώσει ξαναχρησιμοποιηθεί.')
+            $('#errorAlert').text("Ο αριθμός ταυτότητας ή ο αριθμός τηλεφώνου ο οποίος έχεται δώσει έχει ξαναχρησιμοποιηθεί. Παρακαλώ ελέξτε τα στοιχεία σας.").show();
             $('#successAlert').hide();
+          }, 
+          404: function() {
+            alert("Ελλειπεί στοιχεία. Παρακαλώ συμπληρώστε όλα τα απαραίτητα στοιχεία.")
             var name=$("#name").val();
             var surname=$("#surname").val();
-            var identification_method=$("#identification_method").val();
+            var street_number=$("#street_number").val();
             var identification_number=$("#identification_number").val();
             var email=$("#email").val();
             var contact_number=$("#contact_number").val();
@@ -34,137 +40,219 @@
             var postal_code=$("#postal_code").val();
             var password=$("#password").val();      
             if (name === ""){                          
-                  document.getElementById("name").focus();
+              document.getElementById("name").focus();
             } else if (surname === ""){                          
-                  document.getElementById("surname").focus();
+              document.getElementById("surname").focus();
             }
-            else if (identification_method === "0"){                          
-                      $('#identification_method').first().focus();
+            else if (street_number === 0){                          
+              $('#street_number').first().focus();
             }
             else if (identification_number === ""){                          
-                  document.getElementById("identification_number").focus();
+              document.getElementById("identification_number").focus();
             }
-            
             else if (address === ""){                                        
-                  document.getElementById("address").focus();
+              document.getElementById("address").focus();
             }
             else if (city === "0"){                                        
               $('#city').first().focus();
             }
             else if (postal_code === ""){                          
-                  document.getElementById("postal_code").focus();
+              document.getElementById("postcode").focus();
             }
             else if (contact_number === ""){                          
-                  document.getElementById("contact_number").focus();
+              document.getElementById("contact_number").focus();
             }
             else if (password === ""){                          
-                  document.getElementById("password").focus();
+              document.getElementById("password").focus();
             };
           }
-          else{
-            alert("Καλωσορίσατε: "+data.name);
-            // $('#successAlert').text("Καλωσορίσατε: "+data.name).show();
-            $('#errorAlert').hide();
-            window.setTimeout(function(){
-
+        },
+      })
+      .done(function(data){      
+        window.setTimeout(function(){
         // Move to a new location or you can do something else
         window.location.href = "/";
-
-      }, 100);
-          }
-        })
-        ;
-        event.preventDefault();
-
+      }, 100);          
       });
-
+      event.preventDefault();
     });
-function changePriorDistType() {
-    menuItem = document.getElementById("identification_method").val();
-    alert(menuItem);
-    if ( priorCFRDistType == 2 ) {
-       var tmpThing = document.getElementById("cfr_1").innerText;
-       tmpThing = "Lower bound";
-    }
+  });
+
+  function isNumber(evt) {
+    evt = (evt) ? evt : window.event;
+    var charCode = (evt.which) ? evt.which : evt.keyCode;
+    if ( (charCode > 31 && charCode < 48) || charCode > 57) {
+      alert("Το πεδίο αυτό δέχεται μόνο αριθμούς");
+      return false;
+    }        
+    return true;
+  }
+
+// ==========  Start Change Postal Code actions ============ //
+function updateCity(){
+  var postcode = $("#postcode").val();  
+  $.ajax({
+    data:{
+     postcode:postcode
+   },
+   type: 'POST',
+   url:'/load_city_pc',
+ }).done(function(data){
+  var city = data.city;
+  updateAddress(postcode);
+  $('#postcode_numbers_empty').remove(); 
+  $('#city_empty').remove(); 
+  $('#cityName option:selected').removeAttr('selected');
+  $('#cityName option[value="'+city+'"]').attr('selected','selected');//select the one you want                 
+});
 }
 
-function isNumber(evt) {
-        evt = (evt) ? evt : window.event;
-        var charCode = (evt.which) ? evt.which : evt.keyCode;
-        if ( (charCode > 31 && charCode < 48) || charCode > 57) {
-            alert("Το πεδίο αυτό δέχεται μόνο αριθμούς");
-            return false;
-        }        
-        return true;
+function updateAddress(postcode){
+  $.ajax({
+    data:{
+      postcode:postcode
+    },
+    type: 'POST',
+    url:'/load_address_pc',
+    success:function(data){      
+      var address = data.address;          
+      $('#address').find('option').remove().end(); 
+      addresses = address.split(",");        
+      for (i = 1; i < addresses.length; i++) {      
+        addresses[i] = addresses[i].split('["').pop().split('"]')[0];
+        $('#address').append( $("<option id='addr'></option>").attr("value",addresses[i]).text(addresses[i]) );
+      }          
     }
-  </script>
+  });
+}
+
+// ==========  End Change Postal Code actions ============ //
+
+// ==========  Start Change City actions ============ //
+function updatePC(){
+  var city = $("#cityName").val();
+  $.ajax({
+    data:{
+     city:city,     
+   },
+   type: 'POST',
+   url:'/load_pc_city',
+   success:function(data){
+    $('#city_empty').remove(); 
+    var postcode = data.postcode;          
+    $('#postcode').find('option').remove().end();
+    postcode = postcode.split(",");              
+    for (i = 1; i < postcode.length; i++) {      
+      $('#postcode').append( $("<option id='postal_code'></option>").attr("value",postcode[i]).text(postcode[i]) );
+    }    
+    updatePcAddress(city);
+  }
+});
+}
+
+function updatePcAddress(city){
+  $.ajax({
+    data:{
+      city:city,
+    },
+    type: 'POST',
+    url:'/load_address_city',
+    success:function(data){
+      var address = data.address;          
+      $('#address').find('option').remove().end(); 
+      addresses = address.split(",");        
+      for (i = 1; i < addresses.length; i++) {      
+        addresses[i] = addresses[i].split('["').pop().split('"]')[0];
+        $('#address').append( $("<option></option>").attr("value",addresses[i]).text(addresses[i]) );
+      }          
+    }
+  });
+}
+
+// ==========  End Change City actions ============ //
+
+</script>
 {%endblock%}
 {% block title%}
-      <h2>Συμπλήρωση στοιχείων για εγγραφή στο σύστημα    </h2>
-  {%endblock%}
+<h2>Συμπλήρωση στοιχείων για εγγραφή στο σύστημα    </h2>
+{%endblock%}
 {% block content%}
-      <div class="col-md-4">
-        <form  action="" method="post" role="form" id="fm">                    
-          <div class="form-group">
-            <label for="name">Όνομα:</label>
-            <input type="text" class="form-control" id="name" name="name" placeholder="Ανδρέας" autofocus>
-            <br>
-            <label for="surname">Επίθετο:</label>
-            <input type="text" class="form-control" id="surname" name="surname" placeholder="Ανδρέου">
-            <br>
-            <label for="identification_method">Ταυτότητα / Διαβατήριο:</label>
-            <select class="form-control" id="identification_method" name="identification_method" onchange="changePriorDistType()" style=" height: 34px; line-height: 1,5;" >
-              <option id="identification_method" selected value="0"> </option>
-              <option  id="identification_method" name="identification_method" value="1">Αριθμός Ταυτότητας</option>
-              <option  id="identification_method" name="identification_method" value="2">Αριθμός Διαβατηρίου</option>
-            </select>
-            <br>
-            <label for="identification_number">Αριθμός Ταυτότητας:</label>
-            <input type="text" class="form-control" id="identification_number" name="identification_number" placeholder="123456">
-            <br>
-
-            <label for="address">Διεύθυνση:</label>
-            <input type="text" class="form-control" id="address" name="address" placeholder="Αρχιεπισκόπου Μακαρίου 3, Στρόβολος">
-            <br>
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="city">Πόλη</label>
-                <select id="city" name="city" class="form-control" style=" height: 34px; line-height: 1,5;" >
-                  <option selected name="city" id="city" value="">Επιλογή Πόλης</option>
-                  <option  name="city" id="city" value="Λευκωσία">Λευκωσία</option>
-                  <option  name="city" id="city" value="Λάρνακα">Λάρνακα</option>
-                  <option  name="city" id="city" value="Λεμεσός">Λεμεσός</option>
-                  <option  name="city" id="city" value="Πάφος">Πάφος</option>
-                  <option  name="city" id="city" value="Αμμόχωστος">Αμμόχωστος</option>
-                </select>
-              </div>
-              <div class="form-group col-md-6">
-                <label for="inputCity">Τ.Κ</label>
-                <input type="number" class="form-control" id="postal_code"  onkeypress="return isNumber(event)" onpaste="return false;" name="postal_code" placeholder="1000">
-              </div>
-            </div>
-            <label for="contact_number">Τηλέφωνο Επικοινωνίας:</label>
-            <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="contact_number" name="contact_number" placeholder="99123456">
-            <br>
-            <label for="email">Ηλεκτρονικό Ταχυδρομείο: (μη υποχρεωτικό πεδίο)</label>
-            <input type="text" class="form-control" id="email" name="email" placeholder="test@test.com"><br>
-            <label for="password">Κωδικός Χρήστη:</label>
-            <input type="password" class="form-control" id="password" name="password" placeholder="Εισαγωγή κωδικού.">
-            <br>
-            <label for="password">Επαλήθευση Κωδικού Χρήστη:</label>
-            <input type="password" class="form-control" id="password" name="password" onpaste="return false;" placeholder="Επαλήθευση κωδικού.">
-          </div>
-          <br>													   
-          <center>
-            <button type="submit" id="submit" class="btn btn-success">Εγγραφή</button>
-          </center>
-        </form>        
-        
-        <div class="alert alert-success" id="successAlert" role="alert" style="display: none">
+<div class="col-md-4">
+  <form  action="" method="post" role="form" id="fm">                    
+    <div class="form-group">
+      <label for="name">Όνομα:*</label>
+      <input type="text" class="form-control" id="name" name="name" placeholder="Ανδρέας" autofocus>
+      <br>
+      <label for="surname">Επίθετο:*</label>
+      <input type="text" class="form-control" id="surname" name="surname" placeholder="Ανδρέου">
+      <br>
+      <label for="identification_number">Αριθμός Ταυτότητας:*</label>
+      <input type="text" class="form-control" id="identification_number" name="identification_number" placeholder="123456">
+      <br>
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <label for="cityName">Πόλη*</label>
+          <select id="cityName" onchange="updatePC();" name="city" class="form-control">
+            <option selected name="city_empty" id="city_empty" value=""></option>
+            <option  name="city" id="city" value="Λευκωσία">Λευκωσία</option>
+            <option  name="city" id="city" value="Λάρνακα">Λάρνακα</option>
+            <option  name="city" id="city" value="Λεμεσός">Λεμεσός</option>
+            <option  name="city" id="city" value="Πάφος">Πάφος</option>
+            <option  name="city" id="city" value="Αμμόχωστος">Αμμόχωστος</option>
+          </select>
         </div>
-        <div class="alert alert-danger" id="errorAlert" role="alert" style="display: none">
+        <div class="form-group col-md-6">
+          <label for="postcode">Τ.Κ*</label>                
+          <select id="postcode" name="postcode" class="form-control" onchange="updateCity();">
+            <option id="postcode_numbers_empty" value="0"></option>
+            {% for row in postalcodes %}
+            <option id="postal_code"  name="{{row}}" value="{{row}}" data-tokens="{{row}}">{{row}} </option>
+            {% endfor %}
+          </select>
         </div>
-        <br>
       </div>
+      <div class="form-row">
+        <div class="form-group col-md-9">
+          <label for="address">Διεύθυνση:*</label>                
+          <select id="address" name="address" class="form-control"  >
+            <option selected name="addr" id="addr" value=""></option>
+            {% for row in address %}
+            <option id="addr"  name="addr" value={{row}} data-tokens="{{row}}">{{row}} </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group col-md-3">
+          <label for="street_number">Αριθμός:*</label>
+          <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="street_number" name="street_number" min="1"  placeholder="1">
+        </div>
+      </div>            
+      <label for="contact_number">Τηλέφωνο Επικοινωνίας:*</label>
+      <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="contact_number" name="contact_number" placeholder="99123456">
+      <br>
+      <label for="email">Ηλεκτρονικό Ταχυδρομείο:</label>
+      <input type="text" class="form-control" id="email" name="email" placeholder="test@test.com"><br>
+      <label for="password">Κωδικός Χρήστη:*</label>
+      <input type="password" class="form-control" id="password" name="password" placeholder="Εισαγωγή κωδικού.">
+      <br>
+      <label for="password">Επαλήθευση Κωδικού Χρήστη:*</label>
+      <input type="password" class="form-control" id="password" name="password" onpaste="return false;" placeholder="Επαλήθευση κωδικού.">
     </div>
-    {%endblock%}
+
+    <figcaption class="figure-caption text-left">
+      Τα στοιχεία με * στο τέλος είναι <b>υποχρεωτικά</b>. 
+    </figcaption>
+    <br>    
+    <center>
+      <button type="submit" id="submit" class="btn btn-success">Εγγραφή</button>
+    </center>
+
+  </form>        
+
+  <div class="alert alert-success" id="successAlert" role="alert" style="display: none">
+  </div>
+  <div class="alert alert-danger" id="errorAlert" role="alert" style="display: none">
+  </div>
+  <br>
+</div>
+</div>
+{%endblock%}

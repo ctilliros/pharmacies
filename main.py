@@ -21,7 +21,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = postgres_url
 app.config["DEBUG"] = True
 file_farmakia = 'farmakia.json'
+postalcodes_file = 'cyprus_postcodes_with_population.json'
+postalcodes_address_file = 'postalcodes_addresses.csv'
 import json
+import pandas as pd
+import geopandas as gpd
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
@@ -32,27 +36,26 @@ class Database(db.Model):
     __tablename__ = 'pharmacies_test'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String())
-    surname = db.Column(db.String())
-    identification_method = db.Column(db.Integer())
-    identification_number = db.Column(db.String())
+    surname = db.Column(db.String())    
+    identification_number = db.Column(db.String(), primary_key=True)
     email = db.Column(db.String())
     contact_number = db.Column(db.Integer())
     address = db.Column(db.String())
+    street_number = db.Column(db.Integer())
     city = db.Column(db.String())
     postal_code = db.Column(db.String())
     password = db.Column(db.String(255))
 
-    def __init__(self, name, surname, identification_method,city, identification_number, email, contact_number, address, postal_code, password):
+    def __init__(self, name, surname, street_number,city, identification_number, email, contact_number, address, postal_code, password):
         self.name = name
-        self.surname = surname
-        self.identification_method = identification_method
+        self.surname = surname        
         self.identification_number = identification_number
         self.email = email
         self.contact_number = contact_number
         self.address = address
+        self.street_number = street_number
         self.city = city
         self.postal_code = postal_code
-        # self.password = bcrypt.generate_password_hash(password).decode('UTF-8')
         self.password = password
 
     def __repr__(self):
@@ -64,52 +67,90 @@ class Database(db.Model):
     def check_password(self, secret):
         return check_password_hash(self.password, secret)
 
-class LoginForm(Form):
-    name = TextField('Name:', validators=[DataRequired()], render_kw={'autofocus': True})
-    surname = TextField('Surname:', validators=[DataRequired()])
-    identification_method = SelectField('Identification Method:', validators=[DataRequired()])
-    identification_number = TextField('Identfication Number:', validators=[DataRequired()])
-    # email = StringField("Email",  [InputRequired("Please enter your email address."), Email("This field requires a valid email address")])
-    email = StringField('Email (optional)', validators=[Optional(), Email()])
+# class LoginForm(Form):
+#     name = TextField('Name:', validators=[DataRequired()], render_kw={'autofocus': True})
+#     surname = TextField('Surname:', validators=[DataRequired()])
+#     street_number = SelectField('Street Number:', validators=[DataRequired()])
+#     identification_number = TextField('Identfication Number:', validators=[DataRequired()])
+#     # email = StringField("Email",  [InputRequired("Please enter your email address."), Email("This field requires a valid email address")])
+#     email = StringField('Email (optional)', validators=[Optional(), Email()])
 
-    # email = StringField("Email", Email("This field requires a valid email address"))
-    contact_number = TextField('Contact Number:', validators=[DataRequired()])
-    address = TextField('Address:', validators=[DataRequired()])
-    city = TextField('City:', validators=[DataRequired()])
-    postal_code = TextField('Postal Code:', validators=[DataRequired()])
-    password = PasswordField('New Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords must match')
-    ])
-    submit = SubmitField('Submit')
+#     # email = StringField("Email", Email("This field requires a valid email address"))
+#     contact_number = TextField('Contact Number:', validators=[DataRequired()])
+#     address = TextField('Address:', validators=[DataRequired()])
+#     city = TextField('City:', validators=[DataRequired()])
+#     postal_code = TextField('Postal Code:', validators=[DataRequired()])
+#     password = PasswordField('New Password', [
+#         validators.DataRequired(),
+#         validators.EqualTo('confirm', message='Passwords must match')
+#     ])
+#     submit = SubmitField('Submit')
 
 
 
 @app.route("/signup", methods=['POST','GET'])
-def signup():    
-    return render_template('signup.html')
+def signup():  
+    with open(postalcodes_file,'r') as f:
+        data = json.load(f)
+    gdf = gpd.GeoDataFrame.from_features(data["features"])
+    postalcodes_address = loadpostalcodefile()
+    postalcodes_address = postalcodes_address.sort_values(by='postcode')
+    postalcodes= postalcodes_address.postcode.unique()
+    postalcodes_address = postalcodes_address.sort_values(by='address_gr')
+    address= postalcodes_address.address_gr.unique()
+    return render_template('signup.html',postalcodes=postalcodes, address = address)
 
-# @app.route("/login_post", methods=["POST", "GET"])
-# def login_post():
-#     print("2")
-#     return render_template('login.html')
+def loadpostalcodefile():
+    postalcodes_address = pd.read_csv(postalcodes_address_file)
+    postalcodes_address =postalcodes_address.drop(['Streetlimit FROM - TO','Postal Service through \nPost Office/Postal Agency (GR)','Postal Service through \nPost Office/Postal Agency (EN)'], axis=1)
+    postalcodes_address.columns=['address_gr','address_en','postcode','municipalitygr','municipalityen','districtgr','districten']          
+    return postalcodes_address
 
+@app.route("/load_city_pc", methods=['POST','GET'])
+def load_city_pc(): 
+    postalcodes_address = loadpostalcodefile()
+    postalcodes_address = postalcodes_address.sort_values(by='postcode')
+    postalcode = request.form['postcode']
+    post_edit = postalcodes_address.loc[postalcodes_address['postcode'] == int(postalcode)]    
+    city = post_edit.districtgr.unique()    
+    return jsonify({'city':city[0]})
+
+@app.route("/load_address_pc", methods=['POST','GET'])
+def load_address_pc():
+    postalcodes_address = loadpostalcodefile()
+    postalcodes_address = postalcodes_address.sort_values(by='address_gr')
+    postalcode = request.form['postcode']
+    postalcodes_address = postalcodes_address.loc[postalcodes_address['postcode'] == int(postalcode)]    
+    address = postalcodes_address['address_gr']    
+    address = pd.DataFrame(address)    
+    return jsonify(address = address.to_json(orient='values', force_ascii = False))
+
+@app.route("/load_pc_city", methods=['POST','GET'])
+def load_pc_city():
+    postalcodes_address = loadpostalcodefile()
+    postalcodes_address = postalcodes_address.sort_values(by=['postcode','districtgr'])
+    city = request.form['city']
+    post_edit = postalcodes_address.loc[postalcodes_address['districtgr'] == city]    
+    postcode = post_edit['postcode'].drop_duplicates()        
+    return jsonify(postcode = postcode.to_json(orient='values'))
+
+@app.route("/load_address_city", methods=['POST','GET'])
+def load_address_city():
+    postalcodes_address = loadpostalcodefile()    
+    postalcodes_address = postalcodes_address.sort_values(by='address_gr')
+    city = request.form['city']
+    postalcodes_address = postalcodes_address.loc[postalcodes_address['districtgr'] == city]    
+    address = postalcodes_address['address_gr']    
+    address = pd.DataFrame(address).drop_duplicates()    
+    return jsonify(address = address.to_json(orient='values', force_ascii = False))
 
 @app.route("/login", methods=['POST','GET'])
 def login(): 
-    print("here")
-    if request.method == 'POST':
-        print("here1")
+    if request.method == 'POST':        
         identification_method = request.form['identification_method']
-        ident1 = identification_method
         if (identification_method == 'Ταυτότητα'):             
             identification_number = request.form['identification']            
-            identification = identification_number                 
-            identification_method = 1
-        elif (identification_method == 'Διαβατήριο'):
-            identification_number = request.form['identification']            
-            identification = identification_number    
-            identification_method = 2
+            identification = identification_number                         
         elif identification_method == 'Τηλέφωνο Επικοινωνίας':
             contact_number=request.form['identification']
             identification = contact_number                
@@ -118,19 +159,17 @@ def login():
             identification = email
         password = request.form['password']   
         if (identification != '') or (password != ""):
-            if (identification_method == 1) or (identification_method == 2) :
-                records = Database.query.filter(Database.identification_method == identification_method,
-                Database.identification_number == identification).first()            
+            if (identification_method == 'Ταυτότητα'):
+                records = Database.query.filter(Database.identification_number == identification).first()
             if (identification_method == 'Τηλέφωνο Επικοινωνίας'):
                 records = Database.query.filter(Database.contact_number == identification).first()
             if (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
-                records = Database.query.filter(Database.identification_number == identification).first()
-            
+                records = Database.query.filter(Database.email == identification).first()
             if records:                
                 authenticated_user = check_password_hash(records.password,password)
                 if authenticated_user:  
                     session['identification_number'] = identification
-                    create_map(identification_method,identification)
+                    # create_map(identification_method,identification)
                     return jsonify(200)
                     # return redirect(url_for('homepage',identification_method = ident1, identification=identification, scheme = 'https'))
                 else:                    
@@ -145,7 +184,7 @@ def logout():
         session.pop('identification_number', None)
     return jsonify({'message' : 'You successfully logged out'})
 
-
+'''
 
 def create_map(identification_method,identification):
     import overpy
@@ -302,35 +341,29 @@ def add_house(address, postal_code,city):
     folium.Marker([location.raw['lat'],location.raw['lon']],icon=folium.Icon(color='green',icon='home', prefix='fa')).add_to(m)
     folium.LayerControl().add_to(m)
     return m, lat, lon
-
+'''
 
 
 @app.route('/homepage/<identification_method>/<identification>', methods=['POST','GET'])
-def homepage(identification_method,identification): 
-    if (identification_method == 'Ταυτότητα'):             
-        identification_method = 1
-    elif (identification_method == 'Διαβατήριο'):
-        identification_method = 2
-    if (identification_method == 1) or (identification_method == 2) :
-        records = Database.query.filter(Database.identification_method == identification_method,\
-            Database.identification_number == identification).first()   
+def homepage(identification_method,identification):     
+    if (identification_method == 'Ταυτότητα') :
+        records = Database.query.filter(Database.identification_number == identification).first()   
     elif (identification_method == 'Τηλέφωνο Επικοινωνίας'):
         records = Database.query.filter(Database.contact_number == identification).first()
     elif (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
         records = Database.query.filter(Database.identification_number == identification).first()
-    x, lathouse, lonhouse = add_house(records.address, records.postal_code, records.city)
+    # x, lathouse, lonhouse = add_house(records.address, records.postal_code, records.city)
     
     with open(file_farmakia, 'r') as f:
         data = json.load(f)
-    import pandas as pd
     pharmacies = pd.DataFrame(columns={'distance','identification_number','lat_ph','lon_ph'})
 
     for i in data:
         lat = i[0]
         lon = i[1]
         import math
-        dist = math.sqrt((float(lat) - float(lonhouse))**2 + (float(lon) - float(lathouse))**2) *100     
-        pharmacies =pharmacies.append({'distance':round(dist,2),'identification_number':records.identification_number, 'lat_ph':lat,'lon_ph':lon},ignore_index=True)
+        # dist = math.sqrt((float(lat) - float(lonhouse))**2 + (float(lon) - float(lathouse))**2) *100     
+        # pharmacies =pharmacies.append({'distance':round(dist,2),'identification_number':records.identification_number, 'lat_ph':lat,'lon_ph':lon},ignore_index=True)
         pd.set_option('max_rows',40)            
     
     min_dist= pharmacies['distance'].min()
@@ -361,15 +394,9 @@ def profile_edit(identification_method,identification):
 
 @app.route("/get_name", methods=['POST','GET'])
 def get_name(identification_method,identification):        
-    if (identification_method == 'Ταυτότητα'):                     
-        identification_method = 1
-    elif (identification_method == 'Διαβατήριο'):
-        identification_method = 2
 
-
-    if (identification_method == 1) or (identification_method == 2) :
-                records = Database.query.filter(Database.identification_method == identification_method,
-                Database.identification_number == identification).first()            
+    if (identification_method == 'Ταυτότητα'):
+        records = Database.query.filter(Database.identification_number == identification).first()            
     if (identification_method == 'Τηλέφωνο Επικοινωνίας'):  
         records = Database.query.filter(Database.contact_number == identification).first()
     if (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
@@ -384,40 +411,49 @@ def signup_post():
     if request.method == 'POST':
         name = request.form['name']
         surname = request.form['surname']
-        identification_method = request.form['identification_method']
         identification_number = request.form['identification_number']
         email = request.form['email']
         contact_number=request.form['contact_number']
         address = request.form['address']
         city = request.form['city']
+        street_number = request.form['street_number']
         postal_code = request.form['postal_code']        
-        password = request.form['password'] 
-        if (name!='' and surname!='' and identification_method!='' and identification_number!='' 
-            and contact_number!='' and address!='' and city!='' and postal_code!='' and password!='' ):            
+        password = request.form['password']         
+        if (name!='' and surname!='' and identification_number!='' and contact_number!='' and address!='' and 
+            street_number!='' and city!='' and postal_code!='' and password!='' ):            
             records = Database.query.filter(or_(Database.identification_number == identification_number,
                 Database.contact_number == contact_number)).first()
-
             if records == None:
-                data = Database(name=name, surname=surname, identification_method=identification_method, identification_number=identification_number,
-                 email= email, contact_number=contact_number, address= address,city=city, postal_code= postal_code, password=generate_password_hash(password))
+                data = Database(name=name, surname=surname, 
+                    identification_number=identification_number,
+                    email= email, contact_number=contact_number, address= address,street_number=street_number,
+                    city=city, postal_code= postal_code, password=generate_password_hash(password))
                 db.session.add(data)
                 db.session.commit()
-                return jsonify({'name': name})
+                resp = jsonify({'message' : 'Η εγγραφή σας έγινε με επιτυχία'})
+                resp.status_code = 200
+                return resp
             else:
-                return redirect('signup')
+                resp = jsonify({'message' : 'Ο αριθμός ταυτότητας ή ο αριθμός τηλεφώνου ο οποίος έχεται δώσει έχει ξαναχρησιμοποιηθεί. Παρακαλώ ελέξτε τα στοιχεία σας.'})
+                resp.status_code = 400
+                return resp
         else:            
-            return redirect('signup')
+            resp = jsonify({'message' : 'Ελλειπή στοιχεία'})
+            resp.status_code = 404
+            return resp
     
-    # return redirect(url_for('index'))
-    return jsonify({'name': name})
+    return redirect(url_for('index'))
+    # return redirect('signup_post')
+
+@app.route("/error_signup_post", methods=['POST','GET'])
+def error_signup_post():      
+    flash('AAAAA')
+    return redirect('signup_post')
 
 @app.route("/update", methods=['POST','GET'])
 def update():
-    if request.method=='GET':
-        print("get")
-    else:
+    if request.method=='POST':        
         name = request.form['name']
-        print(name)
         surname = request.form['surname']
         identification_method = request.form['identification_method']
         identification_number = request.form['identification_number']
@@ -438,10 +474,7 @@ def update():
             records.address = address 
             records.city = city
             records.postal_code = postal_code
-            records.password = generate_password_hash(password)
-            # records = update(Database).where(Database.identification_number==identification_number).values(name=name, 
-            #     surname=surname, identification_method=identification_method, email=email,
-            #     contact_number=contact_number, address=address,city=city,postal_code=postal_code, password = generate_password_hash(password))
+            records.password = generate_password_hash(password)            
             db.session.commit()
 
     return (200)

@@ -3,8 +3,9 @@
   <title>Demo Form</title>
   <meta name="viewport" content="width=device-width, initial-scale=1  maximum-scale=1">
   <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap-theme.min.css"/>
+  <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"/> -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"/>
 
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -124,7 +125,8 @@
     https://www.geeksforgeeks.org/how-to-show-page-loading-div-until-the-page-has-finished-loading/ 
   -->
   <!-- Navbar  -->
-  <nav class="navbar navbar-expand-lg navbar-default bg-primary">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <!-- <nav class="navbar navbar-expand-lg navbar-default bg-primary"> -->
     <ul class="navbar-nav ml-auto">
       {% block profile%}
       <li class="nav-item">
@@ -158,7 +160,6 @@
             <label for="password">Σύνδεση</label>
             <select id="identification_method" name="identification_method" class="form-control" onchange="clearfield()" style=" height: 34px; line-height: 1,5;" >
               <option id="identification_method" name="identification_method" value="Ταυτότητα" selected>Ταυτότητα</option>
-              <option id="identification_method" name="identification_method" value="Διαβατήριο">Διαβατήριο</option>
               <option id="identification_method" name="identification_method" value="Τηλέφωνο Επικοινωνίας">Τηλέφωνο Επικοινωνίας</option>      
               <option id="identification_method" name="identification_method" value="Ηλεκτρονικό Ταχυδρομείο">Ηλεκτρονικό Ταχυδρομείο</option>
             </select><br>

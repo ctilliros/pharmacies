@@ -13,6 +13,8 @@
      $("#profile").attr("href", "/profile_edit/"+method+"/"+account); 
    });   
 
+    $('option').removeAttr('selected').filter('option[value={{city}}]').attr('selected', 'selected');
+  
    $('form').on('click', '#update', function(event){
     $.ajax({
       data:{            
@@ -58,6 +60,7 @@
     }
   });
  });
+
 </script>
 {%endblock%}
 {% block profile%}
@@ -79,10 +82,10 @@
   <form  action="" method="post" role="form" id="fm">                    
     <div class="form-group">
       <label for="name">Όνομα:</label>
-      <input type="text" class="form-control" id="name" name="name" value={{name}} autofocus>
+      <input type="text" class="form-control" id="name" name="name" value="{{name}}" autofocus>
       <br>
       <label for="surname">Επίθετο:</label>
-      <input type="text" class="form-control" id="surname" name="surname" value ={{surname}} >
+      <input type="text" class="form-control" id="surname" name="surname" value ="{{surname}}">
       <br>
       <label for="identification_method">Ταυτότητα / Διαβατήριο:</label>
       <select class="form-control" id="identification_method" name="identification_method" onchange="changePriorDistType()" style=" height: 34px; line-height: 1,5;" >
@@ -92,17 +95,17 @@
       </select>
       <br>
       <label for="identification_number">Αριθμός Ταυτότητας:</label>
-      <input type="text" class="form-control" id="identification_number" name="identification_number" value={{identification_number}}>
+      <input type="text" class="form-control" id="identification_number" name="identification_number" value="{{identification_number}}">
       <br>
 
       <label for="address">Διεύθυνση:</label>
-      <input type="text" class="form-control" id="address" name="address" value={{address}}>
+      <input type="text" class="form-control" maxlength="1000" id="address" name="address" value="{{address}}">
       <br>
       <div class="form-row">
         <div class="form-group col-md-6">
           <label for="city">Πόλη</label>
           <select id="city" name="city" class="form-control" style=" height: 34px; line-height: 1,5;" >
-            <option selected name="city" id="city" value="">Επιλογή Πόλης</option>
+            <option  selected name="city" id="city" value="">Επιλογή Πόλης</option>
             <option  name="city" id="city" value="Λευκωσία">Λευκωσία</option>
             <option  name="city" id="city" value="Λάρνακα">Λάρνακα</option>
             <option  name="city" id="city" value="Λεμεσός">Λεμεσός</option>
@@ -119,7 +122,7 @@
       <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="contact_number" name="contact_number" value={{contact_number}}>
       <br>
       <label for="email">Ηλεκτρονικό Ταχυδρομείο: (μη υποχρεωτικό πεδίο)</label>
-      <input type="text" class="form-control" id="email" name="email" value={{email}}>
+      <input type="text" class="form-control" maxlength="1000" id="email" name="email" value={{email}}>
       <br>
       <label for="password">Κωδικός Χρήστη:</label>
       <input type="password" class="form-control" id="password" name="password" >
