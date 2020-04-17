@@ -37,7 +37,7 @@ class Database(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String())
     surname = db.Column(db.String())    
-    identification_number = db.Column(db.String(), primary_key=True)
+    identification_number = db.Column(db.String())
     email = db.Column(db.String())
     contact_number = db.Column(db.Integer())
     address = db.Column(db.String())
@@ -177,6 +177,110 @@ def login():
             else:                            
                 return redirect('index1.html')        
     # return redirect(url_for('profile',identification=identification, scheme = 'https'))
+
+@app.route('/profile_edit/<identification_method>/<identification>', methods=['POST','GET'])
+def profile_edit(identification_method,identification):           
+    name,surname, identification_number,email,contact_number,street_number,\
+    address,city,postal_code= get_name(identification_method,identification)    
+    with open(postalcodes_file,'r') as f:
+        data = json.load(f)
+    gdf = gpd.GeoDataFrame.from_features(data["features"])
+    postalcodes_address = loadpostalcodefile()
+    postalcodes_address = postalcodes_address.sort_values(by='postcode')
+    postalcodes= postalcodes_address.postcode.unique()
+    postalcodes_address = postalcodes_address.sort_values(by='address_gr')
+    addresses= postalcodes_address.address_gr.unique()
+    return render_template('profile.html', name=name, surname = surname, street_number=street_number,\
+        identification_number=identification_number,email=email, contact_number=contact_number, address=address, postal_code=postal_code,\
+        city=city,postalcodes=postalcodes, addresses = addresses)
+
+# @app.route("/get_name", methods=['POST','GET'])
+def get_name(identification_method,identification):        
+    if (identification_method == 'Ταυτότητα'):
+        records = Database.query.filter(Database.identification_number == identification).first()            
+    if (identification_method == 'Τηλέφωνο Επικοινωνίας'):  
+        records = Database.query.filter(Database.contact_number == identification).first()
+    if (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
+        records = Database.query.filter(Database.identification_number == identification).first()
+
+    return records.name, records.surname, records.identification_number, records.email, records.contact_number, \
+        records.street_number, records.address,records.city,records.postal_code
+               
+
+@app.route("/signup_post", methods=['POST','GET'])
+def signup_post():      
+    if request.method == 'POST':
+        name = request.form['name']
+        surname = request.form['surname']
+        identification_number = request.form['identification_number']
+        email = request.form['email']
+        contact_number=request.form['contact_number']
+        address = request.form['address']
+        city = request.form['city']
+        street_number = request.form['street_number']
+        postal_code = request.form['postal_code']        
+        password = request.form['password']         
+        if (name!='' and surname!='' and identification_number!='' and contact_number!='' and address!='' and 
+            street_number!='' and city!='' and postal_code!='' and password!='' ):            
+            records = Database.query.filter(or_(Database.identification_number == identification_number,
+                Database.contact_number == contact_number)).first()
+            if records == None:
+                data = Database(name=name, surname=surname, 
+                    identification_number=identification_number,
+                    email= email, contact_number=contact_number, address= address,street_number=street_number,
+                    city=city, postal_code= postal_code, password=generate_password_hash(password))
+                db.session.add(data)
+                db.session.commit()
+                resp = jsonify({'message' : 'Η εγγραφή σας έγινε με επιτυχία'})
+                resp.status_code = 200
+                return resp
+            else:
+                resp = jsonify({'message' : 'Ο αριθμός ταυτότητας ή ο αριθμός τηλεφώνου ο οποίος έχεται δώσει έχει ξαναχρησιμοποιηθεί. Παρακαλώ ελέξτε τα στοιχεία σας.'})
+                resp.status_code = 400
+                return resp
+        else:            
+            resp = jsonify({'message' : 'Ελλειπή στοιχεία'})
+            resp.status_code = 404
+            return resp
+    
+    return redirect(url_for('index'))
+    # return redirect('signup_post')
+
+
+@app.route("/update", methods=['POST','GET'])
+def update():
+    if request.method=='POST':     
+        name = request.form['name']
+        surname = request.form['surname']        
+        identification_number = request.form['identification_number']
+        email = request.form['email']
+        contact_number=request.form['contact_number']
+        address = request.form['address']
+        street_number = request.form['street_number']
+        city = request.form['city']
+        postal_code = request.form['postal_code']        
+        password = request.form['password']
+        if (name!='' and surname!='' and identification_number!='' and contact_number!='' and address!='' and street_number!='' and city!='' and postal_code!='' and password!=''): 
+            records = Database.query.filter(Database.identification_number==identification_number).one()            
+            records.name = name
+            records.surname = surname
+            records.identification_number= identification_number
+            records.email=email
+            records.contact_number=contact_number
+            records.address = address 
+            records.street_number = street_number
+            records.city = city
+            records.postal_code = postal_code
+            records.password = generate_password_hash(password)            
+            db.session.commit()
+            resp = jsonify({'message' : 'Η ενημέρωση έγινε με επιτυχία'})
+            resp.status_code = 200
+            return resp
+        else:
+            resp = jsonify({'message' : 'Κάποια στοιχεία είναι ελλειπή. Παρακαλώ όπως συμπληρωθούν όλα τα απαραίτητα στοιχεία.'})
+            resp.status_code = 404
+            return resp
+    return jsonify(200)
 
 @app.route('/logout')
 def logout():
@@ -383,131 +487,29 @@ def homepage(identification_method,identification):
 
     return render_template('login.html', pharmacies=pharmacies.to_dict(orient='records'), name=records.name, med = med.to_dict(orient='records'))
 
-@app.route('/profile_edit/<identification_method>/<identification>', methods=['POST','GET'])
-def profile_edit(identification_method,identification):           
-    name,surname, identification_method,identification_number,email,contact_number,\
-    address,city,postal_code = get_name(identification_method,identification)          
-    return render_template('profile.html', name=name, surname = surname, identification_method=identification_method,\
-        identification_number=identification_number,email=email, contact_number=contact_number, address=address, postal_code=postal_code,\
-        city=city)
-
-
-@app.route("/get_name", methods=['POST','GET'])
-def get_name(identification_method,identification):        
-
-    if (identification_method == 'Ταυτότητα'):
-        records = Database.query.filter(Database.identification_number == identification).first()            
-    if (identification_method == 'Τηλέφωνο Επικοινωνίας'):  
-        records = Database.query.filter(Database.contact_number == identification).first()
-    if (identification_method == 'Ηλεκτρονικό Ταχυδρομείο'):
-        records = Database.query.filter(Database.identification_number == identification).first()
-
-    return records.name, records.surname, records.identification_method, records.identification_number, \
-        records.email, records.contact_number,records.address,records.city, records.postal_code
-               
-
-@app.route("/signup_post", methods=['POST','GET'])
-def signup_post():      
-    if request.method == 'POST':
-        name = request.form['name']
-        surname = request.form['surname']
-        identification_number = request.form['identification_number']
-        email = request.form['email']
-        contact_number=request.form['contact_number']
-        address = request.form['address']
-        city = request.form['city']
-        street_number = request.form['street_number']
-        postal_code = request.form['postal_code']        
-        password = request.form['password']         
-        if (name!='' and surname!='' and identification_number!='' and contact_number!='' and address!='' and 
-            street_number!='' and city!='' and postal_code!='' and password!='' ):            
-            records = Database.query.filter(or_(Database.identification_number == identification_number,
-                Database.contact_number == contact_number)).first()
-            if records == None:
-                data = Database(name=name, surname=surname, 
-                    identification_number=identification_number,
-                    email= email, contact_number=contact_number, address= address,street_number=street_number,
-                    city=city, postal_code= postal_code, password=generate_password_hash(password))
-                db.session.add(data)
-                db.session.commit()
-                resp = jsonify({'message' : 'Η εγγραφή σας έγινε με επιτυχία'})
-                resp.status_code = 200
-                return resp
-            else:
-                resp = jsonify({'message' : 'Ο αριθμός ταυτότητας ή ο αριθμός τηλεφώνου ο οποίος έχεται δώσει έχει ξαναχρησιμοποιηθεί. Παρακαλώ ελέξτε τα στοιχεία σας.'})
-                resp.status_code = 400
-                return resp
-        else:            
-            resp = jsonify({'message' : 'Ελλειπή στοιχεία'})
-            resp.status_code = 404
-            return resp
-    
-    return redirect(url_for('index'))
-    # return redirect('signup_post')
-
-@app.route("/error_signup_post", methods=['POST','GET'])
-def error_signup_post():      
-    flash('AAAAA')
-    return redirect('signup_post')
-
-@app.route("/update", methods=['POST','GET'])
-def update():
-    if request.method=='POST':        
-        name = request.form['name']
-        surname = request.form['surname']
-        identification_method = request.form['identification_method']
-        identification_number = request.form['identification_number']
-        email = request.form['email']
-        contact_number=request.form['contact_number']
-        address = request.form['address']
-        city = request.form['city']
-        postal_code = request.form['postal_code']        
-        password = request.form['password']
-        if (name!='' and surname!='' and identification_method!='' and identification_number!='' 
-            and contact_number!='' and address!='' and city!='' and postal_code!='' and password!=''): 
-            records = Database.query.filter(Database.identification_number==identification_number).one()
-            records.name = name
-            records.surname = surname
-            records.identification_method=identification_method
-            records.email=email
-            records.contact_number=contact_number
-            records.address = address 
-            records.city = city
-            records.postal_code = postal_code
-            records.password = generate_password_hash(password)            
-            db.session.commit()
-
-    return (200)
 
 @app.route("/delete", methods=['POST','GET'])
 def delete():
     if request.method=='POST':    
         name = request.form['name']
-        surname = request.form['surname']
-        identification_method = request.form['identification_method']
+        surname = request.form['surname']        
         identification_number = request.form['identification_number']
         email = request.form['email']
         contact_number=request.form['contact_number']
         address = request.form['address']
+        street_number = request.form['street_number']
         city = request.form['city']
         postal_code = request.form['postal_code']        
         password = request.form['password']
         if (identification_number!='' and contact_number!='' ): 
-            # records = Database.query.filter(or_(Database.identification_number == identification_number, \
-            #     Database.contact_number == contact_number)).delete()
-            # db.session.commit()            
-            # db.session.execute()
-            print("prin")
-            # data = Database(identification_number==identification_number)
             user = Database.query.filter(Database.identification_number==identification_number).one()
             db.session.delete(user)
             print("delete")
             db.session.commit()
-            if 'identification_number' in session:
-                session.pop('identification_number', None)
-            # return jsonify({'message' : 'You successfully logged out'})            
-            return redirect('index1.html')
-    # return redirect('/logout')
+            print("daksljfskjlflsad;fsalf")
+            resp = jsonify({'message' : 'Η ενημέρωση έγινε με επιτυχία'})
+            resp.status_code = 200
+            return resp        
 
 @app.route("/")
 def index():   

@@ -2,64 +2,136 @@
 
 {% block script%}
 <script type="text/javascript">
-  $(document).ready(function(){
+    $(document).ready(function(){
    var account = localStorage.getItem('account');
    var method = localStorage.getItem('method');
-   $("#home").click(function(){		
-     $("#home").attr("href", "/homepage/"+method+"/"+account);	  
+   $("#home").click(function(){   
+     $("#home").attr("href", "/homepage/"+method+"/"+account);    
    });
 
    $("#profile").click(function(){   
      $("#profile").attr("href", "/profile_edit/"+method+"/"+account); 
    });   
 
-    $('option').removeAttr('selected').filter('option[value={{city}}]').attr('selected', 'selected');
-  
-   $('form').on('click', '#update', function(event){
+   $('#cityName option:selected').removeAttr('selected');
+//Autoselect do not work on Safari
+  // $('#cityName option[value="{{city}}"]').attr('selected','selected');
+  document.querySelector('#cityName option[value="{{city}}"]').selected = 'selected';
+
+  $('#postcode option:selected').removeAttr('selected');
+// $('#postcode option[value="{{postal_code}}"]').attr('selected','selected'); 
+document.querySelector('#postcode option[value="{{postal_code}}"]').selected = 'selected';
+
+$('#address option:selected').removeAttr('selected');
+document.querySelector('#address option[value="{{address}}"]').selected = 'selected';
+
+
+   $('form').on('click', '#update', function(){
     $.ajax({
       data:{            
         name:$("#name").val(),
         surname:$("#surname").val(),
-        identification_method:$("#identification_method").val(),
+        street_number:$("#street_number").val(),
         identification_number:$("#identification_number").val(),
         email:$("#email").val(),
         contact_number:$("#contact_number").val(),
         address:$("#address").val(),
         city:$("#city").val(),
-        postal_code:$("#postal_code").val(),
+        postal_code:$("#postcode").val(),
         password:$("#password").val()
       },
       type: 'POST',
       url:'/update',
-    });        
-  });
-
-   $('form').on('click', '#delete', function(event){
-    var answer = window.confirm("Παρακαλώ επιβεβαιώστε την διαγραφή των στοιχείων σας")
-    if (answer) {
-      alert("Η διαγραφή σας έγινε με επιτυχία");
-      $.ajax({
-        data:{            
-          name:$("#name").val(),
-          surname:$("#surname").val(),
-          identification_method:$("#identification_method").val(),
-          identification_number:$("#identification_number").val(),
-          email:$("#email").val(),
-          contact_number:$("#contact_number").val(),
-          address:$("#address").val(),
-          city:$("#city").val(),
-          postal_code:$("#postal_code").val(),
-          password:$("#password").val()
+        statusCode: {
+          200: function() {              
+            alert('Καλωσορίσατε. Θα μεταφερθείτε αυτόματα στην αρχική σελίδα για σύνδεση στο σύστημα.');
+          },
+          404: function() {
+            alert("Ελλειπεί στοιχεία. Παρακαλώ συμπληρώστε όλα τα απαραίτητα στοιχεία.")
+            var name=$("#name").val();
+            var surname=$("#surname").val();
+            var street_number=$("#street_number").val();
+            var identification_number=$("#identification_number").val();
+            var email=$("#email").val();
+            var contact_number=$("#contact_number").val();
+            var address=$("#address").val();
+            var city=$("#city").val();
+            var postal_code=$("#postal_code").val();
+            var password=$("#password").val();      
+            if (name === ""){                          
+              document.getElementById("name").focus();
+            } else if (surname === ""){                          
+              document.getElementById("surname").focus();
+            }
+            else if (street_number === 0){                          
+              $('#street_number').first().focus();
+            }
+            else if (identification_number === ""){                          
+              document.getElementById("identification_number").focus();
+            }
+            else if (address === ""){                                        
+              document.getElementById("address").focus();
+            }
+            else if (city === "0"){                                        
+              $('#city').first().focus();
+            }
+            else if (postal_code === ""){                          
+              document.getElementById("postcode").focus();
+            }
+            else if (contact_number === ""){                          
+              document.getElementById("contact_number").focus();
+            }
+            else if (password === ""){                          
+              document.getElementById("password").focus();
+            };
+          }
         },
-        type: 'POST',
-        url:'/delete',
-      })  
-    }
-    else {
-      alert("Έγινε ακύρωση διαγραφής");
-    }
-  });
- });
+      })
+      .done(function(data){      
+        window.setTimeout(function(){
+        // Move to a new location or you can do something else
+        window.location.href = "/homepage/"+method+"/"+account;
+      }, 100);          
+      });
+      event.preventDefault();
+    });
+
+$('form').on('click', '#delete', function(event){
+  var answer = window.confirm("Παρακαλώ επιβεβαιώστε την διαγραφή των στοιχείων σας");
+  if (answer) {
+    alert("Η διαγραφή σας έγινε με επιτυχία");
+    $.ajax({
+      data:{            
+        name:$("#name").val(),
+        surname:$("#surname").val(),
+        street_number:$("#street_number").val(),
+        identification_number:$("#identification_number").val(),
+        email:$("#email").val(),
+        contact_number:$("#contact_number").val(),
+        address:$("#address").val(),
+        city:$("#city").val(),
+        postal_code:$("#postcode").val(),
+        password:$("#password").val()
+      },
+      type: 'POST',
+      url:'/delete',
+      statusCode:{
+        200:function(){
+          window.location.href = "/";
+        }
+      },
+
+    });  
+  }
+  else {
+    alert("Έγινε ακύρωση διαγραφής");
+  }
+});
+
+
+
+});
+
 
 </script>
 {%endblock%}
@@ -81,31 +153,19 @@
 <div class="col-md-4">
   <form  action="" method="post" role="form" id="fm">                    
     <div class="form-group">
-      <label for="name">Όνομα:</label>
+      <label for="name">Όνομα:*</label>
       <input type="text" class="form-control" id="name" name="name" value="{{name}}" autofocus>
       <br>
-      <label for="surname">Επίθετο:</label>
+      <label for="surname">Επίθετο:*</label>
       <input type="text" class="form-control" id="surname" name="surname" value ="{{surname}}">
       <br>
-      <label for="identification_method">Ταυτότητα / Διαβατήριο:</label>
-      <select class="form-control" id="identification_method" name="identification_method" onchange="changePriorDistType()" style=" height: 34px; line-height: 1,5;" >
-        <option id="identification_method" selected value="0"> </option>
-        <option  id="identification_method" name="identification_method" value="1">Αριθμός Ταυτότητας</option>
-        <option  id="identification_method" name="identification_method" value="2">Αριθμός Διαβατηρίου</option>
-      </select>
-      <br>
-      <label for="identification_number">Αριθμός Ταυτότητας:</label>
-      <input type="text" class="form-control" id="identification_number" name="identification_number" value="{{identification_number}}">
-      <br>
-
-      <label for="address">Διεύθυνση:</label>
-      <input type="text" class="form-control" maxlength="1000" id="address" name="address" value="{{address}}">
+      <label for="identification_number">Αριθμός Ταυτότητας:*</label>
+      <input type="text" class="form-control" id="identification_number" disabled name="identification_number" value="{{identification_number}}">
       <br>
       <div class="form-row">
         <div class="form-group col-md-6">
-          <label for="city">Πόλη</label>
-          <select id="city" name="city" class="form-control" style=" height: 34px; line-height: 1,5;" >
-            <option  selected name="city" id="city" value="">Επιλογή Πόλης</option>
+          <label for="cityName">Πόλη*</label>
+          <select id="cityName" onchange="updatePC();" name="city" class="form-control">
             <option  name="city" id="city" value="Λευκωσία">Λευκωσία</option>
             <option  name="city" id="city" value="Λάρνακα">Λάρνακα</option>
             <option  name="city" id="city" value="Λεμεσός">Λεμεσός</option>
@@ -114,15 +174,33 @@
           </select>
         </div>
         <div class="form-group col-md-6">
-          <label for="inputCity">Τ.Κ</label>
-          <input type="number" class="form-control" id="postal_code"  onkeypress="return isNumber(event)" onpaste="return false;" name="postal_code" value={{postal_code}}>
+          <label for="postcode">Τ.Κ*</label>                
+          <select id="postcode" name="postcode" class="form-control" onchange="updateCity();">
+            {% for row in postalcodes %}
+            <option id="postal_code"  name="{{row}}" value="{{row}}" data-tokens="{{row}}">{{row}} </option>
+            {% endfor %}
+          </select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group col-md-9">
+          <label for="address">Διεύθυνση:*</label>                
+          <select id="address" name="address" class="form-control"  >
+            {% for row in addresses %}
+            <option id="addr"  name="addr" value="{{row}}" data-tokens="{{row}}">{{row}} </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group col-md-3">
+          <label for="street_number">Αριθμός:*</label>
+          <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="street_number" name="street_number" min="1" value={{street_number}}>
+        </div>
+      </div> 
       <label for="contact_number">Τηλέφωνο Επικοινωνίας:</label>
       <input type="number" class="form-control" onkeypress="return isNumber(event)" onpaste="return false;" id="contact_number" name="contact_number" value={{contact_number}}>
       <br>
-      <label for="email">Ηλεκτρονικό Ταχυδρομείο: (μη υποχρεωτικό πεδίο)</label>
-      <input type="text" class="form-control" maxlength="1000" id="email" name="email" value={{email}}>
+      <label for="email">Ηλεκτρονικό Ταχυδρομείο: </label>
+      <input type="text" class="form-control" maxlength="1000" id="email" name="email" value="{{email}}">
       <br>
       <label for="password">Κωδικός Χρήστη:</label>
       <input type="password" class="form-control" id="password" name="password" >

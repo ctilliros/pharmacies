@@ -2,7 +2,7 @@
 {% block script%}
 <script type="text/javascript">
   $(document).ready(function(){
-    $('form').on('submit', function(event){      
+    $('form').on('submit', function(event){     
       $.ajax({
         data:{
           name:$("#name").val(),
@@ -13,7 +13,7 @@
           contact_number:$("#contact_number").val(),
           address:$("#address").val(),
           city:$("#city").val(),
-          postal_code:$("#postal_code").val(),
+          postal_code:$("#postcode").val(),
           password:$("#password").val()
         },
         type: 'POST',
@@ -237,7 +237,6 @@ function updatePcAddress(city){
       <label for="password">Επαλήθευση Κωδικού Χρήστη:*</label>
       <input type="password" class="form-control" id="password" name="password" onpaste="return false;" placeholder="Επαλήθευση κωδικού.">
     </div>
-
     <figcaption class="figure-caption text-left">
       Τα στοιχεία με * στο τέλος είναι <b>υποχρεωτικά</b>. 
     </figcaption>
